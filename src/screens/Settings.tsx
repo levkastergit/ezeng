@@ -103,10 +103,10 @@ export function SettingsScreen() {
       </div>
 
       <div className="muted about">
-        EzEng 1.0.0
+        EzEng {__APP_VERSION__}
         {versions ? ` · Electron ${versions.electron} · Chromium ${versions.chrome}` : ''}
         <br />
-        Шрифт Rubik — SIL Open Font License.
+        Озвучка — Kokoro TTS (Apache 2.0). Шрифт Rubik — SIL Open Font License.
       </div>
     </div>
   );
