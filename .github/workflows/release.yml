@@ -26,7 +26,16 @@ jobs:
       - name: Build renderer
         run: npm run build
 
-      - name: Build installer and publish to GitHub Releases
-        run: npx electron-builder --win --publish always
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build installer and portable exe
+        run: npx electron-builder --win --publish never
+
+      # One release per tag with every artifact attached (electron-builder's own
+      # publisher can create duplicate releases when uploading several files).
+      - name: Publish GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: ${{ github.ref_name }}
+          files: |
+            release/EzEng-Setup-*.exe
+            release/EzEng-*-portable.exe
+          fail_on_unmatched_files: true

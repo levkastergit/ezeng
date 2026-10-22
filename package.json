@@ -68,7 +68,8 @@
       "createStartMenuShortcut": true,
       "shortcutName": "EzEng",
       "artifactName": "${productName}-Setup-${version}.${ext}",
-      "language": "1049"
+      "language": "1049",
+      "differentialPackage": false
     },
     "portable": {
       "artifactName": "${productName}-${version}-portable.${ext}"
