@@ -15,7 +15,9 @@
 
 ## Что внутри
 
-- **24 урока в 6 модулях** (A0 → A1): приветствие и to be, семья и have/has, Present Simple, город и предлоги, Present Continuous, прошедшее и будущее время.
+- **Основной курс: 24 урока в 6 модулях** (A0 → A1): приветствие и to be, семья и have/has, Present Simple, город и предлоги, Present Continuous, прошедшее и будущее время.
+- **Тематические модули** (открыты сразу): слова из поп‑песен, Dota 2, Counter‑Strike 2, Warcraft III, World of Warcraft — по 4 урока с игровой лексикой, фразами и чат‑сокращениями.
+- **Картинка к каждому слову** — иллюстрации [Twemoji](https://github.com/jdecked/twemoji) (CC BY 4.0), подобраны вручную для всех слов курса.
 - **Каждый урок**: новые слова с транскрипцией и озвучкой → правило простым языком → тренировка.
 - **Типы заданий**: выбор перевода, сборка предложения из плиток, перевод на слух, ввод слова, соединение пар, заполнение пропуска. Ошибки возвращаются в конце урока.
 - **Повторение слов** по интервальному алгоритму (упрощённый SM‑2): слова приходят на повтор тогда, когда их легко забыть.
@@ -63,7 +65,9 @@ git push origin v1.0.1
 
 ## Стек
 
-Electron · React · TypeScript · Vite · electron-builder. Шрифт [Rubik](https://github.com/googlefonts/rubik) (SIL Open Font License).
+Electron · React · TypeScript · Vite · electron-builder. Шрифт [Rubik](https://github.com/googlefonts/rubik) (SIL Open Font License). Иллюстрации [Twemoji](https://github.com/jdecked/twemoji) (CC BY 4.0), озвучка [Kokoro](https://github.com/hexgrad/kokoro) (Apache 2.0).
+
+После добавления слов с новыми эмодзи запустите `python scripts/fetch-images.py`, чтобы докачать иллюстрации в `public/img/`.
 
 ## Лицензия
 

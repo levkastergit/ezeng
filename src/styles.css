@@ -1562,7 +1562,7 @@ p {
 
 .dict-row {
   display: grid;
-  grid-template-columns: 36px 200px 1fr auto;
+  grid-template-columns: 36px 40px 190px 1fr auto;
   gap: 16px;
   align-items: center;
   background: var(--card);
@@ -1833,6 +1833,61 @@ p {
   text-align: center;
   font-size: 13px;
   margin-top: 24px;
+}
+
+/* ---------- word illustrations ---------- */
+
+.word-img {
+  flex-shrink: 0;
+  border-radius: 22%;
+  background: var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.word-img img {
+  width: 72%;
+  height: 72%;
+  object-fit: contain;
+  pointer-events: none;
+}
+
+.word-img-fallback {
+  font-weight: 900;
+  color: #c3c8d0;
+}
+
+.word-card-img {
+  margin: 0 auto 14px;
+  background: linear-gradient(180deg, #f0f7ff 0%, #e4f0ff 100%);
+}
+
+.word-line {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+}
+
+.word-line .word-en {
+  margin-top: 0;
+}
+
+.dict-img {
+  background: var(--bg);
+}
+
+.section-title {
+  font-size: 22px;
+  margin: 10px 0 14px;
+}
+
+.section-note {
+  color: var(--muted);
+  margin: -8px 0 16px;
+  font-size: 14px;
 }
 
 /* ---------- updates ---------- */

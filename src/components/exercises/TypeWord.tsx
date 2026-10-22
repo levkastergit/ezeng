@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { TypeEx } from '../../lib/exercises';
 import { shortRu } from '../../lib/exercises';
 import { normalize } from '../../lib/utils';
+import { WordImage } from '../WordImage';
 import type { ExProps } from './common';
 
 export function TypeExercise({ ex, disabled, result, onState }: ExProps<TypeEx>) {
@@ -20,9 +21,12 @@ export function TypeExercise({ ex, disabled, result, onState }: ExProps<TypeEx>)
     <div className="exercise">
       <h2 className="ex-title">Напиши по-английски</h2>
       <div className="prompt-row">
-        <div className="prompt-word">{shortRu(ex.word.ru)}</div>
+        <WordImage img={ex.word.img} size={84} fallback="?" />
+        <div>
+          <div className="prompt-word">{shortRu(ex.word.ru)}</div>
+          <div className="type-hint">{ex.word.exRu}</div>
+        </div>
       </div>
-      <div className="type-hint">{ex.word.exRu}</div>
       <input
         className={cls}
         value={val}

@@ -112,7 +112,7 @@ export function SettingsScreen() {
         EzEng {__APP_VERSION__}
         {versions ? ` · Electron ${versions.electron} · Chromium ${versions.chrome}` : ''}
         <br />
-        Озвучка — Kokoro TTS (Apache 2.0). Шрифт Rubik — SIL Open Font License.
+        Озвучка — Kokoro TTS (Apache 2.0). Иллюстрации — Twemoji (CC BY 4.0). Шрифт Rubik — SIL Open Font License.
       </div>
     </div>
   );

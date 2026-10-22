@@ -6,6 +6,7 @@ import type { WordState } from '../lib/storage';
 import { formatDue } from '../lib/utils';
 import { speak } from '../lib/tts';
 import { IconSearch, IconSpeaker } from '../components/Icons';
+import { WordImage } from '../components/WordImage';
 
 interface Row {
   word: Word;
@@ -67,6 +68,7 @@ export function Dictionary() {
               <button className="speaker-btn small" onClick={() => speak(r.word.en, progress.settings)} aria-label="Прослушать">
                 <IconSpeaker size={18} />
               </button>
+              <WordImage img={r.word.img} size={40} className="dict-img" fallback={r.word.en.slice(0, 1).toUpperCase()} />
               <div className="dict-en">
                 <b>{r.word.en}</b>
                 <span className="dict-ipa">{r.word.ipa}</span>

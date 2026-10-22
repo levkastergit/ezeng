@@ -24,6 +24,11 @@ OVERRIDES = {
     "close": "klˈoʊz",
     "Close the door, please.": "klˈoʊz ðə dˈɔːɹ, plˈiːz.",
     "live": "lˈɪv",
+    "Use your ultimate now!": "jˈuːz jʊɹ ˈʌltᵻmət nˈaʊ!",
+    "Use the scope.": "jˈuːz ðə skˈoʊp.",
+    "milord": "mɪlˈɔːɹd",
+    "Yes, milord.": "jˈɛs, mɪlˈɔːɹd.",
+    "A is clear.": "ˈeɪ ɪz klˈɪɹ.",
 }
 SUSPICIOUS = ("laɪv", "kloʊs", "ɹˈɛd", "jˈuːs")
 
@@ -34,9 +39,13 @@ log = open(os.path.join(out_dir, "phonemes.txt"), "w", encoding="utf-8")
 
 t0 = time.time()
 flagged = []
+skipped = 0
 for i, it in enumerate(items, 1):
     text = it["text"]
     name = os.path.splitext(it["file"])[0] + ".wav"
+    if os.path.exists(os.path.join(out_dir, name)):
+        skipped += 1
+        continue
     if text in OVERRIDES:
         ph = OVERRIDES[text]
         samples, sr = k.create(ph, voice=voice, speed=speed, lang="en-us", is_phonemes=True)
@@ -53,7 +62,7 @@ for i, it in enumerate(items, 1):
         print(f"{i}/{len(items)} clips, {time.time() - t0:.0f}s", flush=True)
 
 log.close()
-print(f"done: {len(items)} clips in {time.time() - t0:.0f}s, voice={voice}, speed={speed}")
+print(f"done: {len(items) - skipped} new clips ({skipped} already existed) in {time.time() - t0:.0f}s, voice={voice}, speed={speed}")
 print("flagged:", len(flagged))
 for t, p in flagged:
     print(" ", t, "->", p)

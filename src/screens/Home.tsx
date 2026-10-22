@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import type { CSSProperties } from 'react';
-import { allLessons, findLesson, modules } from '../data/course';
+import { allLessons, coreModules, findLesson, themeModules } from '../data/course';
 import type { Lesson, Module } from '../data/types';
 import { useProgress } from '../lib/progressContext';
 import { dueWords, streakDays } from '../lib/srs';
@@ -42,14 +42,27 @@ export function Home({ onOpenLesson, onReview }: Props) {
   const greeting = useMemo(() => pick(GREETINGS), []);
 
   const isDone = (l: Lesson) => (progress.lessons[l.id]?.stars ?? 0) > 0;
+
+  /** Core modules unlock one after another; theme modules are open from the start. Inside a module lessons go in order. */
   const isUnlocked = (l: Lesson) => {
     if (progress.settings.unlockAll) return true;
-    const i = findLesson(l.id)!.index;
-    return i === 0 || isDone(allLessons[i - 1]);
+    const mod = findLesson(l.id)!.module;
+    const idx = mod.lessons.indexOf(l);
+    if (idx > 0) return isDone(mod.lessons[idx - 1]);
+    if (mod.kind === 'theme') return true;
+    const coreIdx = coreModules.indexOf(mod);
+    if (coreIdx <= 0) return true;
+    const prev = coreModules[coreIdx - 1];
+    return isDone(prev.lessons[prev.lessons.length - 1]);
   };
-  const nextLesson = allLessons.find((l) => !isDone(l)) ?? null;
+
+  const coreLessons = coreModules.flatMap((m) => m.lessons);
+  const nextLesson =
+    coreLessons.find((l) => !isDone(l)) ?? allLessons.find((l) => !isDone(l) && isUnlocked(l)) ?? null;
   const goal = progress.settings.dailyGoal;
   const goalPct = Math.min(1, todayXp / goal);
+
+  const stars = (l: Lesson) => progress.lessons[l.id]?.stars ?? 0;
 
   return (
     <div className="page">
@@ -115,14 +128,15 @@ export function Home({ onOpenLesson, onReview }: Props) {
         </button>
       </section>
 
-      {modules.map((m) => (
-        <ModuleSection
-          key={m.id}
-          module={m}
-          stars={(l) => progress.lessons[l.id]?.stars ?? 0}
-          unlocked={isUnlocked}
-          onOpen={onOpenLesson}
-        />
+      <h2 className="section-title">Основной курс</h2>
+      {coreModules.map((m) => (
+        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} onOpen={onOpenLesson} />
+      ))}
+
+      <h2 className="section-title">Тематические модули</h2>
+      <p className="section-note">Открыты сразу, проходить можно в любом порядке.</p>
+      {themeModules.map((m) => (
+        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} onOpen={onOpenLesson} />
       ))}
     </div>
   );

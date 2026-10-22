@@ -3,6 +3,7 @@ import type { ChoiceEx } from '../../lib/exercises';
 import { shortRu } from '../../lib/exercises';
 import { speak } from '../../lib/tts';
 import { IconSpeaker } from '../Icons';
+import { WordImage } from '../WordImage';
 import type { ExProps } from './common';
 
 export function ChoiceExercise({ ex, disabled, result, onState, settings }: ExProps<ChoiceEx>) {
@@ -33,10 +34,12 @@ export function ChoiceExercise({ ex, disabled, result, onState, settings }: ExPr
     <div className="exercise">
       <h2 className="ex-title">{isEn ? 'Выбери правильный перевод' : 'Выбери английское слово'}</h2>
       <div className="prompt-row">
-        {isEn && (
+        {isEn ? (
           <button className="speaker-btn" onClick={() => speak(ex.word.en, settings)} aria-label="Прослушать">
             <IconSpeaker size={22} />
           </button>
+        ) : (
+          <WordImage img={ex.word.img} size={72} fallback="?" />
         )}
         <div className="prompt-word">{isEn ? ex.word.en : shortRu(ex.word.ru)}</div>
         {isEn && <div className="prompt-ipa">{ex.word.ipa}</div>}

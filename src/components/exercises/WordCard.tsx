@@ -3,6 +3,7 @@ import type { Word } from '../../data/types';
 import type { Settings } from '../../lib/storage';
 import { speak } from '../../lib/tts';
 import { IconSpeaker } from '../Icons';
+import { WordImage } from '../WordImage';
 
 export function WordCard({ word, settings }: { word: Word; settings: Settings }) {
   useEffect(() => {
@@ -14,10 +15,13 @@ export function WordCard({ word, settings }: { word: Word; settings: Settings })
     <div className="exercise word-card">
       <div className="pill pill-purple">Новое слово</div>
       <div className="word-main">
-        <button className="speaker-btn big" onClick={() => speak(word.en, settings)} aria-label="Прослушать">
-          <IconSpeaker size={30} />
-        </button>
-        <div className="word-en">{word.en}</div>
+        <WordImage img={word.img} size={140} className="word-card-img" fallback={word.en.slice(0, 1).toUpperCase()} />
+        <div className="word-line">
+          <button className="speaker-btn" onClick={() => speak(word.en, settings)} aria-label="Прослушать">
+            <IconSpeaker size={22} />
+          </button>
+          <div className="word-en">{word.en}</div>
+        </div>
         <div className="word-ipa">{word.ipa}</div>
         <div className="word-ru">{word.ru}</div>
       </div>
