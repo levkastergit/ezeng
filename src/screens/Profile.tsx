@@ -1,4 +1,8 @@
+import { useEffect, useState } from 'react';
 import { allLessons, modules, totalWords } from '../data/course';
+import { api, apiAvailable } from '../lib/api';
+import type { LeaderboardRow } from '../lib/api';
+import { useAuth } from '../lib/authContext';
 import { useProgress } from '../lib/progressContext';
 import { streakDays } from '../lib/srs';
 import { WEEKDAYS_SHORT, addDays, dateKey, plural } from '../lib/utils';
@@ -7,6 +11,22 @@ import { IconBolt, IconBook, IconFlame, IconTrophy } from '../components/Icons';
 
 export function Profile() {
   const { progress } = useProgress();
+  const { user } = useAuth();
+  const [board, setBoard] = useState<LeaderboardRow[] | null>(null);
+  const [boardError, setBoardError] = useState('');
+
+  useEffect(() => {
+    if (!apiAvailable()) return;
+    let alive = true;
+    void api.leaderboard().then((r) => {
+      if (!alive) return;
+      if (r.ok) setBoard(r.data.rows);
+      else setBoardError(r.error);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
   const streak = streakDays(progress.days);
   const learned = Object.keys(progress.words).length;
   const lessonsDone = allLessons.filter((l) => (progress.lessons[l.id]?.stars ?? 0) > 0).length;
@@ -146,6 +166,40 @@ export function Profile() {
           Всего звёзд: {starsTotal} из {allLessons.length * 3}
         </div>
       </div>
+
+      {apiAvailable() && (
+        <div className="card">
+          <h3>Таблица лидеров</h3>
+          {board === null && !boardError && <p className="muted">Загружаем…</p>}
+          {boardError && <p className="muted">Таблица недоступна: {boardError}</p>}
+          {board && board.length === 0 && <p className="muted">Пока никто не набрал XP. Будьте первым!</p>}
+          {board && board.length > 0 && (
+            <table className="lb-table">
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th>Игрок</th>
+                  <th>XP</th>
+                  <th>Слов</th>
+                  <th>Уроков</th>
+                </tr>
+              </thead>
+              <tbody>
+                {board.map((r) => (
+                  <tr key={r.login} className={user && r.login === user.login ? 'me' : ''}>
+                    <td>{r.rank}</td>
+                    <td>{r.login}</td>
+                    <td>{r.xp}</td>
+                    <td>{r.words}</td>
+                    <td>{r.lessons}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {!user && <p className="muted" style={{ marginTop: 10 }}>Войдите в аккаунт, чтобы попасть в таблицу.</p>}
+        </div>
+      )}
     </div>
   );
 }

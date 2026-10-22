@@ -1,7 +1,69 @@
 const { app, BrowserWindow, shell, Menu, protocol, net, ipcMain } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const https = require('https');
 const { pathToFileURL } = require('url');
+
+// ---------------------------------------------------------------- account API (pinned self-signed certificate)
+
+const API_HOST = process.env.EZENG_API_HOST || '217.28.220.146';
+const API_PORT = Number(process.env.EZENG_API_PORT || 8443);
+const API_CA = fs.readFileSync(path.join(__dirname, 'server-ca.pem'));
+
+function apiRequest({ method, path: apiPath, body, token }) {
+  return new Promise((resolve) => {
+    const data = body === undefined ? null : JSON.stringify(body);
+    const headers = { Accept: 'application/json' };
+    if (data) {
+      headers['Content-Type'] = 'application/json';
+      headers['Content-Length'] = Buffer.byteLength(data);
+    }
+    if (token) headers.Authorization = `Bearer ${token}`;
+    const req = https.request(
+      { host: API_HOST, port: API_PORT, method, path: apiPath, headers, ca: [API_CA], timeout: 20_000 },
+      (res) => {
+        const chunks = [];
+        res.on('data', (c) => chunks.push(c));
+        res.on('end', () => {
+          let json = null;
+          try {
+            json = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+          } catch {
+            json = null;
+          }
+          resolve({ status: res.statusCode || 0, json });
+        });
+      },
+    );
+    req.on('timeout', () => req.destroy(new Error('timeout')));
+    req.on('error', (err) => resolve({ status: 0, json: null, error: err.message }));
+    if (data) req.write(data);
+    req.end();
+  });
+}
+
+function authFile() {
+  return path.join(app.getPath('userData'), 'auth.json');
+}
+
+ipcMain.handle('api:request', (_e, req) => apiRequest(req || {}));
+ipcMain.handle('auth:get', () => {
+  try {
+    return JSON.parse(fs.readFileSync(authFile(), 'utf8'));
+  } catch {
+    return null;
+  }
+});
+ipcMain.handle('auth:set', (_e, data) => {
+  fs.writeFileSync(authFile(), JSON.stringify(data));
+});
+ipcMain.handle('auth:clear', () => {
+  try {
+    fs.unlinkSync(authFile());
+  } catch {
+    // nothing to clear
+  }
+});
 
 const APP_SCHEME = 'app';
 const DIST_DIR = path.join(__dirname, '..', 'dist');

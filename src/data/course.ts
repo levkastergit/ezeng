@@ -12,8 +12,17 @@ import m10 from "./m10";
 import m11 from "./m11";
 import m12 from "./m12";
 import m13 from "./m13";
+import m14 from "./m14";
+import m15 from "./m15";
+import m16 from "./m16";
+import m17 from "./m17";
+import { extraLessons } from "./extra";
 
-export const modules: Module[] = [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13];
+const baseModules: Module[] = [m1, m2, m3, m4, m5, m6, m7, m8, m9, m10, m11, m12, m13, m14, m15, m16, m17];
+
+export const modules: Module[] = baseModules.map((m) =>
+  extraLessons[m.id] ? { ...m, lessons: [...m.lessons, ...extraLessons[m.id]] } : m,
+);
 
 export const coreModules: Module[] = modules.filter((m) => m.kind !== "theme");
 export const themeModules: Module[] = modules.filter((m) => m.kind === "theme");

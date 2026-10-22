@@ -30,15 +30,40 @@ export interface Rule {
   tip?: string;
 }
 
+export interface DialogueLine {
+  who: "A" | "B";
+  en: string;
+  ru: string;
+}
+
+export interface Quiz {
+  q: string;
+  options: string[];
+  answer: string;
+}
+
+export interface Reading {
+  title: string;
+  paragraphs: { en: string; ru: string }[];
+  questions: Quiz[];
+}
+
+export type LessonType = "words" | "dialogue" | "reading";
+
 export interface Lesson {
   id: string;
   title: string;
   subtitle: string;
   emoji: string;
+  /** "words" (default): cards → rule → drills. "dialogue": cards → dialogue → drills on the lines. "reading": cards → text → comprehension quiz → drills. */
+  type?: LessonType;
   words: Word[];
   rule: Rule;
   sentences: Sentence[];
   gaps: Gap[];
+  dialogue?: DialogueLine[];
+  speakers?: { A: string; B: string };
+  reading?: Reading;
 }
 
 export interface Module {

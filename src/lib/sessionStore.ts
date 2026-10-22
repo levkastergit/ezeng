@@ -11,11 +11,13 @@ export interface SavedSession {
   savedAt: number;
 }
 
-const KEY = 'ezeng.session.v1';
+import { getStorageScope } from './storage';
+
+const KEY = () => `ezeng.session.${getStorageScope()}`;
 
 export function loadSession(): SavedSession | null {
   try {
-    const raw = localStorage.getItem(KEY);
+    const raw = localStorage.getItem(KEY());
     if (!raw) return null;
     const s = JSON.parse(raw) as SavedSession;
     if (!s || !Array.isArray(s.items) || typeof s.idx !== 'number' || s.idx >= s.items.length) return null;
@@ -27,7 +29,7 @@ export function loadSession(): SavedSession | null {
 
 export function saveSession(s: SavedSession): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(s));
+    localStorage.setItem(KEY(), JSON.stringify(s));
   } catch {
     // ignore
   }
@@ -35,7 +37,7 @@ export function saveSession(s: SavedSession): void {
 
 export function clearSession(): void {
   try {
-    localStorage.removeItem(KEY);
+    localStorage.removeItem(KEY());
   } catch {
     // ignore
   }

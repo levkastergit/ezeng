@@ -5,6 +5,7 @@ import { buildReviewQueue } from '../lib/exercises';
 import type { Exercise } from '../lib/exercises';
 import { useProgress } from '../lib/progressContext';
 import { dueWords, nextDue, reviewWord } from '../lib/srs';
+import { bumpDaily } from '../lib/storage';
 import { dateKey, formatDue, plural, shuffle } from '../lib/utils';
 import { Session } from '../components/Session';
 import type { SessionResult } from '../components/Session';
@@ -58,7 +59,7 @@ export function ReviewScreen({ onGoHome }: Props) {
     const xp = r.correct * 2;
     update((p) => {
       const dk = dateKey();
-      return { ...p, xp: p.xp + xp, days: { ...p.days, [dk]: (p.days[dk] ?? 0) + xp } };
+      return bumpDaily({ ...p, xp: p.xp + xp, days: { ...p.days, [dk]: (p.days[dk] ?? 0) + xp } }, { reviews: 1, correct: r.correct });
     });
     setReward({ xp, result: r });
     setPhase('done');

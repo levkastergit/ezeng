@@ -19,7 +19,7 @@ os.makedirs(OUT, exist_ok=True)
 
 emojis = []
 seen = set()
-for f in sorted(glob.glob(os.path.join(ROOT, "src", "data", "m*.ts"))):
+for f in sorted(glob.glob(os.path.join(ROOT, "src", "data", "m*.ts")) + glob.glob(os.path.join(ROOT, "src", "data", "extra", "*.ts"))):
     for m in re.finditer(r'img: "([^"]+)"', open(f, encoding="utf-8").read()):
         e = m.group(1)
         if e not in seen:

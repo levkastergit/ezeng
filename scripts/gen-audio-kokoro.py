@@ -50,6 +50,21 @@ OVERRIDES = {
     "O": "ˈoʊ", "P": "pˈiː", "Q": "kjˈuː", "R": "ˈɑːɹ", "S": "ˈɛs", "T": "tˈiː", "U": "jˈuː",
     "V": "vˈiː", "W": "dˈʌbəljˌuː", "X": "ˈɛks", "Y": "wˈaɪ", "Z": "zˈiː",
 }
+# Chat abbreviations inside longer texts are spelled out letter by letter (or expanded) before G2P.
+SPOKEN = {
+    "brb": "bee are bee", "np": "en pee", "thx": "thanks", "pls": "please", "afk": "ay eff kay",
+    "irl": "eye are ell", "nvm": "never mind", "jk": "jay kay", "gg": "gee gee", "idk": "eye dee kay",
+    "ttyl": "tee tee why ell", "btw": "bee tee double you", "omg": "oh em gee", "tbh": "tee bee aitch",
+    "imo": "eye em oh", "fyi": "eff why eye", "dm": "dee em",
+}
+import re
+SPOKEN_RE = re.compile(r"\b(" + "|".join(sorted(SPOKEN, key=len, reverse=True)) + r")\b")
+# The verb "use" (/juːz/) is phonemized like the noun (/juːs/); fixed after G2P. "excuse" and "useless" keep /s/.
+USE_VERB_RE = re.compile(r"(^| )jˈuːs ")
+
+def spoken_form(text: str) -> str:
+    return SPOKEN_RE.sub(lambda m: SPOKEN[m.group(0)], text)
+
 SUSPICIOUS = ("laɪv", "kloʊs", "ɹˈɛd", "jˈuːs")
 
 k = Kokoro(model, voices_bin)
@@ -70,8 +85,14 @@ for i, it in enumerate(items, 1):
         ph = OVERRIDES[text]
         samples, sr = k.create(ph, voice=voice, speed=speed, lang="en-us", is_phonemes=True)
     else:
-        ph = k.tokenizer.phonemize(text, lang="en-us")
-        samples, sr = k.create(text, voice=voice, speed=speed, lang="en-us")
+        spoken = spoken_form(text)
+        ph = k.tokenizer.phonemize(spoken, lang="en-us")
+        fixed = USE_VERB_RE.sub(r"\1jˈuːz ", ph).replace("jˈuːsᵻz", "jˈuːzᵻz")
+        if fixed != ph:
+            ph = fixed
+            samples, sr = k.create(ph, voice=voice, speed=speed, lang="en-us", is_phonemes=True)
+        else:
+            samples, sr = k.create(spoken, voice=voice, speed=speed, lang="en-us")
     if any(s in ph for s in SUSPICIOUS):
         flagged.append((text, ph))
     pad_start = np.zeros(int(sr * 0.06), dtype=samples.dtype)

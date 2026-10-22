@@ -15,6 +15,12 @@ contextBridge.exposeInMainWorld('ezeng', {
     chrome: process.versions.chrome,
   },
   getVersion: () => ipcRenderer.invoke('app:version'),
+  api: {
+    request: (req) => ipcRenderer.invoke('api:request', req),
+    getAuth: () => ipcRenderer.invoke('auth:get'),
+    setAuth: (data) => ipcRenderer.invoke('auth:set', data),
+    clearAuth: () => ipcRenderer.invoke('auth:clear'),
+  },
   update: {
     check: () => ipcRenderer.invoke('update:check'),
     download: () => ipcRenderer.invoke('update:download'),

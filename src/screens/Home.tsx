@@ -5,25 +5,32 @@ import type { Lesson, Module } from '../data/types';
 import { useProgress } from '../lib/progressContext';
 import { dueWords, streakDays } from '../lib/srs';
 import { loadSession } from '../lib/sessionStore';
+import { QUEST_BONUS, dailyQuests, levelFor, todayStats, wordOfTheDay } from '../lib/stats';
+import { speak } from '../lib/tts';
 import { dateKey, pick, plural } from '../lib/utils';
 import { Mascot } from '../components/Mascot';
 import { ProgressBar } from '../components/ProgressBar';
 import { UpdatePanel } from '../components/UpdatePanel';
+import { WordImage } from '../components/WordImage';
 import {
   IconArrowRight,
   IconBolt,
   IconBook,
+  IconCheck,
   IconCubes,
   IconDumbbell,
   IconFlame,
   IconLock,
   IconRefresh,
+  IconSpeaker,
   IconStar,
 } from '../components/Icons';
 
 interface Props {
   onOpenLesson: (id: string) => void;
+  onEndless: (moduleId: string) => void;
   onReview: () => void;
+  onAchievements: () => void;
 }
 
 const GREETINGS = [
@@ -34,13 +41,17 @@ const GREETINGS = [
   'Новые слова ждут тебя.',
 ];
 
-export function Home({ onOpenLesson, onReview }: Props) {
+export function Home({ onOpenLesson, onEndless, onReview, onAchievements }: Props) {
   const { progress } = useProgress();
   const todayXp = progress.days[dateKey()] ?? 0;
   const streak = streakDays(progress.days);
   const learned = Object.keys(progress.words).length;
   const due = dueWords(progress.words, Date.now()).length;
   const greeting = useMemo(() => pick(GREETINGS), []);
+  const lvl = levelFor(progress.xp);
+  const quests = dailyQuests(progress);
+  const bonusGiven = todayStats(progress).bonus === true;
+  const daily = useMemo(() => wordOfTheDay(), []);
 
   const isDone = (l: Lesson) => (progress.lessons[l.id]?.stars ?? 0) > 0;
 
@@ -75,6 +86,16 @@ export function Home({ onOpenLesson, onReview }: Props) {
           <div className="hero-text">
             <h1>Привет, {progress.settings.name}!</h1>
             <p>{greeting}</p>
+            <button className="level-badge" onClick={onAchievements} title="Достижения и уровни">
+              <span className="level-num">{lvl.level}</span>
+              <span className="level-text">
+                <b>{lvl.title}</b>
+                <small>{lvl.nextTitle ? `${progress.xp} / ${lvl.to} XP` : 'максимальный уровень'}</small>
+              </span>
+              <span className="level-bar">
+                <span style={{ width: `${Math.round(lvl.pct * 100)}%` }} />
+              </span>
+            </button>
             <div className="goal-line">
               <span>
                 Цель дня: <b>{todayXp}</b> / {goal} XP
@@ -130,15 +151,69 @@ export function Home({ onOpenLesson, onReview }: Props) {
         </button>
       </section>
 
+      <section className="daily">
+        <div className="card quests">
+          <div className="card-head">
+            <h3>Задания дня</h3>
+            <span className={'quest-bonus' + (bonusGiven ? ' on' : '')}>{bonusGiven ? `+${QUEST_BONUS} XP получено` : `бонус +${QUEST_BONUS} XP`}</span>
+          </div>
+          {quests.map((q) => (
+            <div key={q.id} className={'quest' + (q.done ? ' done' : '')}>
+              <span className="quest-emoji">{q.done ? <IconCheck size={18} /> : q.emoji}</span>
+              <span className="quest-body">
+                <span className="quest-title">{q.title}</span>
+                <ProgressBar value={q.target > 0 ? q.value / q.target : 0} color={q.done ? '#45C86F' : '#399BFF'} height={6} />
+              </span>
+              <span className="quest-count">
+                {q.value}/{q.target}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="card wotd">
+          <div className="card-head">
+            <h3>Слово дня</h3>
+            <span className="muted">{daily.module.title}</span>
+          </div>
+          <div className="wotd-body">
+            <WordImage img={daily.word.img} size={84} fallback={daily.word.en[0]?.toUpperCase()} />
+            <div className="wotd-text">
+              <div className="wotd-en">
+                {daily.word.en}
+                <button className="icon-btn" onClick={() => speak(daily.word.en, progress.settings)} title="Озвучить">
+                  <IconSpeaker size={18} />
+                </button>
+              </div>
+              <div className="wotd-trans">
+                {daily.word.cy && <span className="cy-pill">{daily.word.cy}</span>}
+                <span className="muted">{daily.word.ipa}</span>
+              </div>
+              <div className="wotd-ru">{daily.word.ru}</div>
+              <div className="wotd-ex">
+                <span>{daily.word.ex}</span>
+                <small className="muted">{daily.word.exRu}</small>
+              </div>
+            </div>
+          </div>
+          {isUnlocked(daily.lesson) ? (
+            <button className="link-btn" onClick={() => onOpenLesson(daily.lesson.id)}>
+              Открыть урок «{daily.lesson.title}»
+            </button>
+          ) : (
+            <div className="muted small">Из урока «{daily.lesson.title}» ({daily.module.title}), он откроется после предыдущих уроков модуля.</div>
+          )}
+        </div>
+      </section>
+
       <h2 className="section-title">Основной курс</h2>
       {coreModules.map((m) => (
-        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} paused={paused} onOpen={onOpenLesson} />
+        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} paused={paused} onOpen={onOpenLesson} onEndless={onEndless} />
       ))}
 
       <h2 className="section-title">Тематические модули</h2>
-      <p className="section-note">Открыты сразу, проходить можно в любом порядке.</p>
+      <p className="section-note">Открыты сразу, проходить можно в любом порядке. У каждого модуля есть бесконечный режим ∞ со случайными заданиями.</p>
       {themeModules.map((m) => (
-        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} paused={paused} onOpen={onOpenLesson} />
+        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} paused={paused} onOpen={onOpenLesson} onEndless={onEndless} />
       ))}
     </div>
   );
@@ -150,9 +225,10 @@ interface ModuleProps {
   unlocked: (l: Lesson) => boolean;
   paused: string | null;
   onOpen: (id: string) => void;
+  onEndless: (moduleId: string) => void;
 }
 
-function ModuleSection({ module, stars, unlocked, paused, onOpen }: ModuleProps) {
+function ModuleSection({ module, stars, unlocked, paused, onOpen, onEndless }: ModuleProps) {
   const done = module.lessons.filter((l) => stars(l) > 0).length;
   return (
     <section className="module">
@@ -162,6 +238,9 @@ function ModuleSection({ module, stars, unlocked, paused, onOpen }: ModuleProps)
           <h2>{module.title}</h2>
           <p>{module.description}</p>
         </div>
+        <button className="endless-btn" onClick={() => onEndless(module.id)} title="Бесконечный режим: случайные задания по всему модулю">
+          ∞ Бесконечный
+        </button>
         <div className={'module-progress' + (done === module.lessons.length ? ' complete' : '')}>
           {done}/{module.lessons.length}
         </div>
@@ -201,6 +280,8 @@ function LessonCard({ lesson, color, stars, locked, paused, onOpen }: CardProps)
       <div className="lesson-info">
         <div className="lesson-title">
           {lesson.title}
+          {lesson.type === 'dialogue' && <span className="lesson-type">диалог</span>}
+          {lesson.type === 'reading' && <span className="lesson-type">текст</span>}
           {paused && <span className="paused-badge">продолжить</span>}
         </div>
         <div className="lesson-sub">{lesson.subtitle}</div>
@@ -209,7 +290,7 @@ function LessonCard({ lesson, color, stars, locked, paused, onOpen }: CardProps)
             <IconCubes size={14} /> {n} {plural(n, 'слово', 'слова', 'слов')}
           </span>
           <span className="step">
-            <IconBook size={14} /> правило
+            <IconBook size={14} /> {lesson.type === 'dialogue' ? 'диалог' : lesson.type === 'reading' ? 'текст' : 'правило'}
           </span>
           <span className="step">
             <IconDumbbell size={14} /> тренировка

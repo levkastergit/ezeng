@@ -1,19 +1,27 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import type { Exercise } from '../lib/exercises';
+import { CARD_KINDS } from '../lib/exercises';
 import type { Settings } from '../lib/storage';
 import { pick } from '../lib/utils';
 import { stopSpeaking } from '../lib/tts';
+import { playSfx } from '../lib/sfx';
 import { Button } from './Button';
 import { ProgressBar } from './ProgressBar';
 import { IconBolt, IconCheck, IconClose, IconCross } from './Icons';
 import type { ExerciseState } from './exercises/common';
 import { WordCard } from './exercises/WordCard';
 import { RuleCard } from './exercises/RuleCard';
+import { DialogueCard } from './exercises/DialogueCard';
+import { ReadingCard } from './exercises/ReadingCard';
 import { ChoiceExercise } from './exercises/Choice';
+import { ListenChoiceExercise } from './exercises/ListenChoice';
 import { BuildExercise } from './exercises/Build';
 import { TypeExercise } from './exercises/TypeWord';
 import { MatchExercise } from './exercises/Match';
 import { GapExercise } from './exercises/Gap';
+import { TrueFalseExercise } from './exercises/TrueFalse';
+import { QuizExercise } from './exercises/Quiz';
 
 export interface SessionResult {
   correct: number;
@@ -48,14 +56,20 @@ interface Props {
   onToggleTurbo?: (on: boolean) => void;
   initial?: SessionSnapshot;
   exitConfirm?: string;
+  /** Extra content for the header, e.g. endless-mode counters. */
+  headerExtra?: ReactNode;
+  /** Hide the progress bar (endless mode). */
+  noProgress?: boolean;
 }
 
 const PRAISE = ['Отлично!', 'Верно!', 'Так держать!', 'Супер!', 'Правильно!', 'Именно так!'];
 const AUTO_NEXT_MS = 1100;
+const INSTANT_KINDS = new Set(['choice', 'gap', 'listenchoice', 'truefalse', 'quiz']);
 
 function correctAnswerOf(ex: Exercise): string {
   switch (ex.kind) {
     case 'choice':
+    case 'listenchoice':
       return ex.answer;
     case 'gap':
       return ex.gap.text.replace('___', ex.gap.answer);
@@ -63,12 +77,46 @@ function correctAnswerOf(ex: Exercise): string {
       return ex.word.en;
     case 'build':
       return ex.sentence.en;
+    case 'truefalse':
+      return ex.isTrue ? 'Верно' : `Неверно. ${ex.sentence.en} — ${ex.sentence.ru}`;
+    case 'quiz':
+      return ex.quiz.answer;
     default:
       return '';
   }
 }
 
-export function Session({ title, queue, settings, onExit, onFinish, onAnswer, onSnapshot, onToggleTurbo, initial, exitConfirm }: Props) {
+function stepLabelOf(ex: Exercise): string {
+  switch (ex.kind) {
+    case 'word':
+      return 'Новые слова';
+    case 'rule':
+      return 'Правило';
+    case 'dialogue':
+      return 'Диалог';
+    case 'reading':
+      return 'Текст';
+    case 'quiz':
+      return 'Вопросы по тексту';
+    default:
+      return 'Тренировка';
+  }
+}
+
+export function Session({
+  title,
+  queue,
+  settings,
+  onExit,
+  onFinish,
+  onAnswer,
+  onSnapshot,
+  onToggleTurbo,
+  initial,
+  exitConfirm,
+  headerExtra,
+  noProgress,
+}: Props) {
   const [items, setItems] = useState<Exercise[]>(initial?.items ?? queue);
   const [idx, setIdx] = useState(initial?.idx ?? 0);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -80,7 +128,7 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
   const nextRef = useRef<() => void>(() => undefined);
 
   const item = items[idx];
-  const isCard = item.kind === 'word' || item.kind === 'rule';
+  const isCard = CARD_KINDS.has(item.kind);
   const turbo = settings.turbo;
 
   const clearAuto = () => {
@@ -95,12 +143,14 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
       if (ok) {
         stats.current.correct += 1;
         setFeedback({ kind: 'ok', text: pick(PRAISE) });
+        if (settings.sounds) playSfx('ok');
         if (settings.turbo) {
           clearAuto();
           autoTimer.current = window.setTimeout(() => nextRef.current(), AUTO_NEXT_MS);
         }
       } else {
         stats.current.wrong += 1;
+        if (settings.sounds) playSfx('bad');
         setFeedback({
           kind: 'bad',
           text: item.kind === 'match' ? 'Все пары найдены, но были ошибки.' : 'Не совсем. Правильный ответ:',
@@ -112,15 +162,14 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
       }
       onAnswer?.(item, ok);
     },
-    [item, onAnswer, settings.turbo],
+    [item, onAnswer, settings.turbo, settings.sounds],
   );
 
   const onState = useCallback(
     (s: ExerciseState) => {
       setReady(s.ready);
       checkRef.current = s.check;
-      // Turbo: a picked option is checked at once (single-choice tasks only).
-      if (turbo && s.ready && (item.kind === 'choice' || item.kind === 'gap')) {
+      if (turbo && s.ready && INSTANT_KINDS.has(item.kind)) {
         const r = s.check();
         applyResult(r.ok, r.answer);
       }
@@ -185,10 +234,15 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
     }
   };
 
-  const label = feedback ? 'Продолжить' : item.kind === 'word' ? 'Дальше' : item.kind === 'rule' ? 'Понятно' : 'Проверить';
+  const label = feedback
+    ? 'Продолжить'
+    : item.kind === 'word' || item.kind === 'dialogue' || item.kind === 'reading'
+      ? 'Дальше'
+      : item.kind === 'rule'
+        ? 'Понятно'
+        : 'Проверить';
   const disabled = feedback !== null;
   const result = feedback ? (feedback.kind === 'skip' ? null : feedback.kind === 'ok') : null;
-  const stepLabel = item.kind === 'word' ? 'Новые слова' : item.kind === 'rule' ? 'Правило' : 'Тренировка';
   const noAudio = settings.noAudio;
 
   let body;
@@ -199,8 +253,17 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
     case 'rule':
       body = <RuleCard rule={item.rule} settings={settings} />;
       break;
+    case 'dialogue':
+      body = <DialogueCard lines={item.lines} speakers={item.speakers} settings={settings} />;
+      break;
+    case 'reading':
+      body = <ReadingCard reading={item.reading} settings={settings} />;
+      break;
     case 'choice':
       body = <ChoiceExercise ex={item} disabled={disabled} result={result} onState={onState} settings={settings} />;
+      break;
+    case 'listenchoice':
+      body = <ListenChoiceExercise ex={item} disabled={disabled} result={result} onState={onState} settings={settings} />;
       break;
     case 'build':
       body = (
@@ -222,6 +285,12 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
     case 'gap':
       body = <GapExercise ex={item} disabled={disabled} result={result} onState={onState} settings={settings} />;
       break;
+    case 'truefalse':
+      body = <TrueFalseExercise ex={item} disabled={disabled} result={result} onState={onState} settings={settings} />;
+      break;
+    case 'quiz':
+      body = <QuizExercise ex={item} disabled={disabled} result={result} onState={onState} settings={settings} />;
+      break;
   }
 
   const footerCls = 'session-bottom' + (feedback ? ` ${feedback.kind}` : '');
@@ -232,7 +301,8 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
         <button className="icon-btn" onClick={exit} aria-label="Выйти">
           <IconClose size={22} />
         </button>
-        <ProgressBar value={idx / items.length} className="session-progress" />
+        {noProgress ? <div className="session-progress" /> : <ProgressBar value={idx / items.length} className="session-progress" />}
+        {headerExtra}
         <button
           className={'turbo-btn' + (turbo ? ' on' : '')}
           onClick={() => onToggleTurbo?.(!turbo)}
@@ -241,7 +311,7 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
           <IconBolt size={16} /> Турбо
         </button>
         <div className="session-title">
-          {title} · {stepLabel}
+          {title} · {stepLabelOf(item)}
         </div>
       </header>
       <main className="session-body">
@@ -269,7 +339,7 @@ export function Session({ title, queue, settings, onExit, onFinish, onAnswer, on
                   ? 'Нажми слово слева, затем его перевод справа'
                   : isCard
                     ? ''
-                    : turbo && (item.kind === 'choice' || item.kind === 'gap')
+                    : turbo && INSTANT_KINDS.has(item.kind)
                       ? 'Турбо: выбери вариант'
                       : 'Enter — проверить'}
             </div>

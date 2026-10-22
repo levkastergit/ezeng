@@ -27,6 +27,13 @@ export const IconSpeaker = ({ size, ...p }: P) => (
   </svg>
 );
 
+export const IconMedal = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <circle cx="12" cy="15" r="5.5" />
+    <path d="M8.5 10.5L6 3h4l2 5 2-5h4l-2.5 7.5" />
+  </svg>
+);
+
 export const IconCheck = ({ size, ...p }: P) => (
   <svg {...base(size, p)} strokeWidth={3}>
     <path d="M5 12.5l4.5 4.5L19 7.5" />

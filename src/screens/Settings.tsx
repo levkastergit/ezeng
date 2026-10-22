@@ -1,9 +1,11 @@
 import { useEffect, useState } from 'react';
 import { useProgress } from '../lib/progressContext';
-import { clearProgress, defaultProgress } from '../lib/storage';
+import { clearProgress, defaultProgress, normalizeProgress } from '../lib/storage';
+import type { Progress } from '../lib/storage';
 import { getEnglishVoices, onVoicesChanged, speak, ttsAvailable } from '../lib/tts';
 import { Button } from '../components/Button';
 import { UpdatePanel } from '../components/UpdatePanel';
+import { AccountCard } from '../components/AccountCard';
 
 const GOALS = [10, 20, 30, 50, 80];
 
@@ -30,6 +32,33 @@ export function SettingsScreen() {
     }
   };
 
+  const exportProgress = () => {
+    const blob = new Blob([JSON.stringify(progress, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `ezeng-progress-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const importProgress = (file: File | undefined) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const parsed = JSON.parse(String(reader.result)) as Partial<Progress>;
+        if (!parsed || typeof parsed !== 'object' || !('xp' in parsed)) throw new Error('bad');
+        if (window.confirm('Заменить текущий прогресс данными из файла?')) {
+          update(() => normalizeProgress(parsed));
+        }
+      } catch {
+        window.alert('Это не файл прогресса EzEng.');
+      }
+    };
+    reader.readAsText(file);
+  };
+
   const versions = (window as unknown as { ezeng?: { versions?: { electron: string; chrome: string } } }).ezeng?.versions;
 
   return (
@@ -37,6 +66,8 @@ export function SettingsScreen() {
       <div className="page-head">
         <h1>Настройки</h1>
       </div>
+
+      <AccountCard />
 
       <div className="card">
         <h3>Профиль</h3>
@@ -83,6 +114,10 @@ export function SettingsScreen() {
           <span>Автоматически озвучивать новые слова и задания на слух</span>
         </label>
         <label className="field field-row">
+          <input type="checkbox" checked={s.sounds} onChange={(e) => set({ sounds: e.target.checked })} />
+          <span>Звуки правильного и неправильного ответа</span>
+        </label>
+        <label className="field field-row">
           <input type="checkbox" checked={s.noAudio} onChange={(e) => set({ noAudio: e.target.checked })} />
           <span>Режим без звука: задания на слух заменяются на обычные, ничего не озвучивается автоматически (кнопки озвучки остаются)</span>
         </label>
@@ -110,10 +145,19 @@ export function SettingsScreen() {
 
       <div className="card">
         <h3>Данные</h3>
-        <p className="muted">Прогресс хранится только на этом компьютере.</p>
-        <Button variant="danger" onClick={reset}>
-          Сбросить прогресс
-        </Button>
+        <p className="muted">Файл прогресса можно перенести на другой компьютер или сохранить как резервную копию.</p>
+        <div className="btn-row left">
+          <Button variant="secondary" onClick={exportProgress}>
+            Экспорт в файл
+          </Button>
+          <label className="btn btn-secondary btn-md file-btn">
+            Импорт из файла
+            <input type="file" accept="application/json,.json" onChange={(e) => importProgress(e.target.files?.[0])} />
+          </label>
+          <Button variant="danger" onClick={reset}>
+            Сбросить прогресс
+          </Button>
+        </div>
       </div>
 
       <div className="muted about">

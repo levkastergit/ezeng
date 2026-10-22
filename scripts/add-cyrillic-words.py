@@ -29,7 +29,7 @@ OVERRIDES = {
 pattern = re.compile(r'(\{ en: "([^"]+)", ru: "[^"]*", ipa: "([^"]+)",)( cy: "[^"]*",)?')
 rows = []
 changed_files = 0
-for f in sorted(glob.glob(os.path.join(ROOT, "src", "data", "m*.ts"))):
+for f in sorted(glob.glob(os.path.join(ROOT, "src", "data", "m*.ts")) + glob.glob(os.path.join(ROOT, "src", "data", "extra", "*.ts"))):
     src = open(f, encoding="utf-8").read()
 
     def repl(m):

@@ -15,7 +15,7 @@ items_out = sys.argv[1]
 texts = []
 seen = set()
 pattern = re.compile(r'\b(?:en|ex)\s*:\s*"((?:[^"\\]|\\.)*)"')
-for f in sorted(glob.glob(os.path.join(root, 'src', 'data', '*.ts'))):
+for f in sorted(glob.glob(os.path.join(root, 'src', 'data', '*.ts')) + glob.glob(os.path.join(root, 'src', 'data', 'extra', '*.ts'))):
     src = open(f, encoding='utf-8').read()
     for m in pattern.finditer(src):
         t = m.group(1).replace('\\"', '"').strip()

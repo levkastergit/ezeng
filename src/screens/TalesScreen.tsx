@@ -3,6 +3,7 @@ import { tales } from '../data/tales';
 import type { Tale } from '../data/tales';
 import { taleImages } from '../data/taleImages';
 import { useProgress } from '../lib/progressContext';
+import { bumpDaily } from '../lib/storage';
 import { speakAsync, stopSpeaking } from '../lib/tts';
 import { Button } from '../components/Button';
 import { IconArrowLeft, IconPlay, IconSpeaker, IconStop } from '../components/Icons';
@@ -63,7 +64,7 @@ export function TalesScreen() {
     stop();
     setPage(p);
     if (tale && p === tale.pages.length - 1 && !progress.talesDone.includes(tale.id)) {
-      update((pr) => ({ ...pr, talesDone: [...pr.talesDone, tale.id] }));
+      update((pr) => bumpDaily({ ...pr, talesDone: [...pr.talesDone, tale.id] }, { tales: 1 }));
     }
   };
 

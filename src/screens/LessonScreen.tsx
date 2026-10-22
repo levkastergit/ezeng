@@ -3,6 +3,7 @@ import { findLesson, wordKey } from '../data/course';
 import { buildLessonQueue } from '../lib/exercises';
 import { useProgress } from '../lib/progressContext';
 import { clearSession, loadSession, saveSession } from '../lib/sessionStore';
+import { bumpDaily } from '../lib/storage';
 import { initWord } from '../lib/srs';
 import { dateKey, plural } from '../lib/utils';
 import { Session } from '../components/Session';
@@ -41,8 +42,9 @@ export function LessonScreen({ lessonId, onExit }: Props) {
 
   const handleFinish = (r: SessionResult) => {
     clearSession();
-    const accuracy = r.total > 0 ? r.correct / r.total : 1;
-    const stars = r.wrong === 0 ? 3 : accuracy >= 0.8 ? 2 : 1;
+    const answered = r.correct + r.wrong + r.skipped;
+    const accuracy = answered > 0 ? r.correct / answered : 1;
+    const stars = r.wrong === 0 && r.skipped === 0 ? 3 : accuracy >= 0.8 ? 2 : 1;
     const xp = 10 + r.correct;
     const now = Date.now();
     const newWords = lesson.words.filter((w) => !progress.words[wordKey(lesson.id, w.en)]).length;
@@ -64,7 +66,7 @@ export function LessonScreen({ lessonId, onExit }: Props) {
         },
       };
       const dk = dateKey();
-      return { ...p, xp: p.xp + xp, days: { ...p.days, [dk]: (p.days[dk] ?? 0) + xp }, lessons, words };
+      return bumpDaily({ ...p, xp: p.xp + xp, days: { ...p.days, [dk]: (p.days[dk] ?? 0) + xp }, lessons, words }, { lessons: 1, correct: r.correct });
     });
     setReward({ xp, stars, newWords, accuracy });
   };

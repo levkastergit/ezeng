@@ -1,11 +1,13 @@
 import type { ReactNode } from 'react';
 import { Mascot } from './Mascot';
 import { useUpdateState } from '../lib/updater';
+import { useAuth } from '../lib/authContext';
 import {
   IconBook,
   IconBolt,
   IconFlame,
   IconGear,
+  IconMedal,
   IconMusic,
   IconPath,
   IconRefresh,
@@ -25,6 +27,7 @@ export type NavName =
   | 'tales'
   | 'test'
   | 'profile'
+  | 'achievements'
   | 'settings';
 
 interface Props {
@@ -45,11 +48,21 @@ const items: { name: NavName; label: string; icon: ReactNode }[] = [
   { name: 'tales', label: 'Сказки', icon: <IconBook size={22} /> },
   { name: 'test', label: 'Тест уровня', icon: <IconTrophy size={22} /> },
   { name: 'profile', label: 'Профиль', icon: <IconUser size={22} /> },
+  { name: 'achievements', label: 'Достижения', icon: <IconMedal size={22} /> },
   { name: 'settings', label: 'Настройки', icon: <IconGear size={22} /> },
 ];
 
+const SYNC_TEXT: Record<string, string> = {
+  idle: '',
+  syncing: 'синхронизация…',
+  synced: 'сохранено на сервере',
+  offline: 'офлайн, сохранено локально',
+  error: 'ошибка синхронизации',
+};
+
 export function Sidebar({ current, onNavigate, dueCount, streak, xp }: Props) {
   const update = useUpdateState();
+  const { user, sync } = useAuth();
   const updateReady = update.phase === 'available' || update.phase === 'downloaded';
   return (
     <aside className="sidebar">
@@ -72,6 +85,11 @@ export function Sidebar({ current, onNavigate, dueCount, streak, xp }: Props) {
           </button>
         ))}
       </nav>
+      <button className="account-chip" onClick={() => onNavigate('settings')} title={user ? SYNC_TEXT[sync] : 'Войти или создать аккаунт'}>
+        <span className={'sync-dot ' + (user ? sync : 'guest')} />
+        <span className="account-name">{user ? user.login : 'Гость'}</span>
+        <span className="account-sub">{user ? SYNC_TEXT[sync] : 'без аккаунта'}</span>
+      </button>
       <div className="sidebar-stats">
         <div className="side-stat" title="Дней подряд">
           <IconFlame size={18} className="c-orange" />
