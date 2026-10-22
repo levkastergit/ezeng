@@ -56,7 +56,7 @@ export function todayStats(p: Progress, date: string = dateKey()): DailyStats {
   return p.daily?.[date] ?? emptyDaily();
 }
 
-function hashDate(date: string): number {
+export function hashStr(date: string): number {
   let h = 2166136261;
   for (let i = 0; i < date.length; i++) {
     h ^= date.charCodeAt(i);
@@ -81,11 +81,12 @@ const SLOT_C: QuestDef[] = [
   { id: 'endless24', emoji: '♾️', title: 'Бесконечный режим: 24 ответа', target: 24, value: (_p, d) => d.endless },
   { id: 'goal', emoji: '⚡', title: 'Выполни цель дня по XP', target: 0, value: (p, _d, date) => p.days[date] ?? 0 },
   { id: 'tale1', emoji: '📖', title: 'Дочитай одну сказку', target: 1, value: (_p, d) => d.tales },
+  { id: 'gacha3', emoji: '🎰', title: 'Сделай 3 крутки в гаче', target: 3, value: (_p, d) => d.gacha ?? 0 },
 ];
 
 /** Three quests for the day: the set depends on the date only, so it stays the same all day. */
 export function dailyQuests(p: Progress, date: string = dateKey()): Quest[] {
-  const h = hashDate(date);
+  const h = hashStr(date);
   const defs = [SLOT_A[h % SLOT_A.length], SLOT_B[(h >>> 4) % SLOT_B.length], SLOT_C[(h >>> 8) % SLOT_C.length]];
   const d = todayStats(p, date);
   return defs.map((q) => {
@@ -110,7 +111,7 @@ export interface DailyWord {
 const ALL: DailyWord[] = modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.words.map((word) => ({ word, lesson, module }))));
 
 export function wordOfTheDay(date: string = dateKey()): DailyWord {
-  return ALL[hashDate('word:' + date) % ALL.length];
+  return ALL[hashStr('word:' + date) % ALL.length];
 }
 
 /* ------------------------------------------------------------------ misc counters */

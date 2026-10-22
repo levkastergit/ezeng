@@ -1,5 +1,6 @@
 import { coreModules, themeModules } from '../data/course';
 import { tales } from '../data/tales';
+import { completedModules } from './gacha';
 import type { Progress } from './storage';
 import { QUEST_BONUS, bestStreak, lessonsDone, moduleDone, perfectLessons, questsDone, sumDaily, todayStats } from './stats';
 import { streakDays } from './srs';
@@ -90,6 +91,11 @@ export const ACHIEVEMENTS: Achievement[] = [
   A('tale_1', 'Режимы', '📖', 'Сказка на ночь', 'Дочитать одну сказку', (p) => [p.talesDone.length, 1]),
   A('tales_all', 'Режимы', '🧚', 'Сказочник', 'Дочитать все сказки', (p) => [p.talesDone.length, tales.length]),
   A('song_1', 'Режимы', '🎵', 'Своя песня', 'Добавить свою песню в раздел песен', (p) => [p.customSongs.length, 1]),
+  A('gacha_1', 'Режимы', '🎰', 'Первая крутка', 'Сделать первую крутку в гаче', (p) => [p.gacha?.pulls ?? 0, 1]),
+  A('gacha_legendary', 'Режимы', '🌟', 'Легендарная карта', 'Выбить легендарную карту в гаче', (p) => [Object.values(p.gacha?.cards ?? {}).some((c) => c.r === 'legendary') ? 1 : 0, 1]),
+  A('gacha_50', 'Режимы', '🃏', 'Коллекционер', 'Собрать 50 карт в гаче', (p) => [Object.keys(p.gacha?.cards ?? {}).length, 50]),
+  A('gacha_200', 'Режимы', '🎴', 'Большая коллекция', 'Собрать 200 карт в гаче', (p) => [Object.keys(p.gacha?.cards ?? {}).length, 200]),
+  A('gacha_module', 'Режимы', '🏆', 'Полный набор', 'Собрать все карты одного модуля', (p) => [completedModules(p).length, 1]),
   // --- special
   A('early_bird', 'Особые', '🌅', 'Ранняя пташка', 'Пройти урок между 5 и 8 утра', (_p, h) => [h.hours.some((x) => x >= 5 && x < 8) ? 1 : 0, 1]),
   A('night_owl', 'Особые', '🦉', 'Сова', 'Пройти урок между полуночью и 4 утра', (_p, h) => [h.hours.some((x) => x >= 0 && x < 4) ? 1 : 0, 1]),

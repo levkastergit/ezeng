@@ -61,6 +61,36 @@ export interface DailyStats {
   tales: number;
   /** Daily-quest bonus already granted. */
   bonus?: boolean;
+  /** Gacha pulls made today. */
+  gacha?: number;
+}
+
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
+
+export interface GachaCardState {
+  r: Rarity;
+  /** Copies pulled. */
+  n: number;
+  /** First pull time. */
+  at: number;
+}
+
+export interface GachaState {
+  /** Crystals spent on pulls. */
+  spent: number;
+  pulls: number;
+  /** Pulls since the last legendary card. */
+  pity: number;
+  /** Date key of the last free daily pull. */
+  lastFree?: string;
+  shards: number;
+  /** Crystals obtained by exchanging shards. */
+  exchanged: number;
+  cards: Record<string, GachaCardState>;
+}
+
+export function emptyGacha(): GachaState {
+  return { spent: 0, pulls: 0, pity: 0, shards: 0, exchanged: 0, cards: {} };
 }
 
 export interface Progress {
@@ -80,6 +110,8 @@ export interface Progress {
   achievements?: Record<string, number>;
   /** Per-day activity counters (date key → stats), used for daily quests. */
   daily?: Record<string, DailyStats>;
+  /** Word gacha: collected cards and currency bookkeeping. */
+  gacha?: GachaState;
   /** Last modification time, used to reconcile with the server copy. */
   updatedAt?: number;
   createdAt: number;
@@ -140,6 +172,7 @@ export function normalizeProgress(parsed: Partial<Progress>): Progress {
       talesDone: Array.isArray(parsed.talesDone) ? parsed.talesDone : [],
       achievements: parsed.achievements && typeof parsed.achievements === 'object' ? parsed.achievements : {},
       daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
+      gacha: parsed.gacha && typeof parsed.gacha === 'object' ? { ...emptyGacha(), ...parsed.gacha, cards: parsed.gacha.cards ?? {} } : emptyGacha(),
   };
 }
 

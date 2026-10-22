@@ -34,6 +34,13 @@ export const IconMedal = ({ size, ...p }: P) => (
   </svg>
 );
 
+export const IconGem = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M7 4h10l4 5.5L12 20 3 9.5 7 4z" />
+    <path d="M3 9.5h18M9.5 4L12 20 14.5 4" />
+  </svg>
+);
+
 export const IconCheck = ({ size, ...p }: P) => (
   <svg {...base(size, p)} strokeWidth={3}>
     <path d="M5 12.5l4.5 4.5L19 7.5" />
