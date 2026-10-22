@@ -1,7 +1,7 @@
 {
   "name": "ezeng",
   "productName": "EzEng",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "EzEng — приложение для изучения английского языка для ПК",
   "main": "electron/main.cjs",
   "private": true,
@@ -87,5 +87,8 @@
     "electron@45.0.0": true,
     "electron-winstaller@5.4.0": true,
     "esbuild@0.28.2": true
+  },
+  "dependencies": {
+    "electron-updater": "^6.8.9"
   }
 }

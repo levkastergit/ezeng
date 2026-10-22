@@ -3,6 +3,7 @@ import { useProgress } from '../lib/progressContext';
 import { clearProgress, defaultProgress } from '../lib/storage';
 import { getEnglishVoices, onVoicesChanged, speak, ttsAvailable } from '../lib/tts';
 import { Button } from '../components/Button';
+import { UpdatePanel } from '../components/UpdatePanel';
 
 const GOALS = [10, 20, 30, 50, 80];
 
@@ -92,6 +93,11 @@ export function SettingsScreen() {
           <input type="checkbox" checked={s.unlockAll} onChange={(e) => set({ unlockAll: e.target.checked })} />
           <span>Открыть все уроки сразу (без последовательного прохождения)</span>
         </label>
+      </div>
+
+      <div className="card">
+        <h3>Обновления</h3>
+        <UpdatePanel />
       </div>
 
       <div className="card">

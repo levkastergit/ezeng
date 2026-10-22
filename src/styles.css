@@ -1835,6 +1835,79 @@ p {
   margin-top: 24px;
 }
 
+/* ---------- updates ---------- */
+
+.nav-dot {
+  margin-left: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 3px var(--green-light);
+}
+
+.update-banner {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: linear-gradient(90deg, var(--green) 0%, #2fb75e 100%);
+  color: #fff;
+  border-radius: 18px;
+  padding: 14px 18px;
+  margin-bottom: 16px;
+  box-shadow: 0 8px 20px rgba(69, 200, 111, 0.3);
+}
+
+.update-banner-text {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.update-banner-text b {
+  font-size: 16px;
+}
+
+.update-banner-text span {
+  font-size: 14px;
+  opacity: 0.95;
+}
+
+.update-banner-bar {
+  background: rgba(255, 255, 255, 0.35);
+  max-width: 420px;
+}
+
+.update-banner .btn-secondary {
+  color: var(--green-dark);
+  border-color: #fff;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.12);
+}
+
+.update-panel p {
+  margin-bottom: 14px;
+}
+
+.update-ok {
+  color: var(--green-dark);
+  font-weight: 600;
+}
+
+.update-error {
+  color: var(--red-dark);
+}
+
+.update-bar {
+  max-width: 420px;
+  margin-bottom: 14px;
+}
+
+.btn-row.left {
+  justify-content: flex-start;
+}
+
 /* ---------- scrollbars ---------- */
 
 ::-webkit-scrollbar {

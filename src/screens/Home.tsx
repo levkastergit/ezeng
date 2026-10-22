@@ -7,6 +7,7 @@ import { dueWords, streakDays } from '../lib/srs';
 import { dateKey, pick, plural } from '../lib/utils';
 import { Mascot } from '../components/Mascot';
 import { ProgressBar } from '../components/ProgressBar';
+import { UpdatePanel } from '../components/UpdatePanel';
 import {
   IconArrowRight,
   IconBolt,
@@ -52,6 +53,7 @@ export function Home({ onOpenLesson, onReview }: Props) {
 
   return (
     <div className="page">
+      <UpdatePanel compact />
       <section className="hero">
         <div className="hero-inner">
           <Mascot size={136} mood={todayXp >= goal ? 'excited' : 'happy'} className="hero-mascot" />

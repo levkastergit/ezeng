@@ -38,4 +38,5 @@ jobs:
           files: |
             release/EzEng-Setup-*.exe
             release/EzEng-*-portable.exe
+            release/latest.yml
           fail_on_unmatched_files: true

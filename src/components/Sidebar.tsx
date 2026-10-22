@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Mascot } from './Mascot';
+import { useUpdateState } from '../lib/updater';
 import { IconBook, IconFlame, IconGear, IconPath, IconRefresh, IconUser, IconBolt } from './Icons';
 
 export type NavName = 'home' | 'review' | 'dictionary' | 'profile' | 'settings';
@@ -21,6 +22,8 @@ const items: { name: NavName; label: string; icon: ReactNode }[] = [
 ];
 
 export function Sidebar({ current, onNavigate, dueCount, streak, xp }: Props) {
+  const update = useUpdateState();
+  const updateReady = update.phase === 'available' || update.phase === 'downloaded';
   return (
     <aside className="sidebar">
       <div className="brand">
@@ -38,6 +41,7 @@ export function Sidebar({ current, onNavigate, dueCount, streak, xp }: Props) {
             <span className="nav-icon">{it.icon}</span>
             <span className="nav-label">{it.label}</span>
             {it.name === 'review' && dueCount > 0 && <span className="nav-badge">{dueCount}</span>}
+            {it.name === 'settings' && updateReady && <span className="nav-dot" title="Доступно обновление" />}
           </button>
         ))}
       </nav>
