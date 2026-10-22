@@ -29,6 +29,11 @@ OVERRIDES = {
     "milord": "mɪlˈɔːɹd",
     "Yes, milord.": "jˈɛs, mɪlˈɔːɹd.",
     "A is clear.": "ˈeɪ ɪz klˈɪɹ.",
+    # letter names for the alphabet screen
+    "A": "ˈeɪ", "B": "bˈiː", "C": "sˈiː", "D": "dˈiː", "E": "ˈiː", "F": "ˈɛf", "G": "dʒˈiː",
+    "H": "ˈeɪtʃ", "I": "ˈaɪ", "J": "dʒˈeɪ", "K": "kˈeɪ", "L": "ˈɛl", "M": "ˈɛm", "N": "ˈɛn",
+    "O": "ˈoʊ", "P": "pˈiː", "Q": "kjˈuː", "R": "ˈɑːɹ", "S": "ˈɛs", "T": "tˈiː", "U": "jˈuː",
+    "V": "vˈiː", "W": "dˈʌbəljˌuː", "X": "ˈɛks", "Y": "wˈaɪ", "Z": "zˈiː",
 }
 SUSPICIOUS = ("laɪv", "kloʊs", "ɹˈɛd", "jˈuːs")
 

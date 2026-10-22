@@ -92,6 +92,47 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   speakWithSystemVoice(text, rate, opts.voiceURI ?? '');
 }
 
+export function hasEnglishVoice(): boolean {
+  return getEnglishVoices().length > 0;
+}
+
+/** Like speak(), but resolves when playback ends (or immediately when nothing can be played). */
+export function speakAsync(text: string, opts: SpeakOptions = {}): Promise<void> {
+  stopSpeaking();
+  const rate = clampRate(opts.rate);
+  const file = manifest[text] ?? manifest[text.trim()];
+  if (file) {
+    return new Promise((resolve) => {
+      const audio = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
+      audio.playbackRate = rate / BASE_RATE;
+      (audio as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
+      current = audio;
+      const done = () => {
+        if (current === audio) current = null;
+        resolve();
+      };
+      audio.addEventListener('ended', done);
+      audio.addEventListener('error', done);
+      audio.addEventListener('pause', done);
+      audio.play().catch(done);
+    });
+  }
+  return new Promise((resolve) => {
+    if (!ttsAvailable()) return resolve();
+    const v = pickVoice(opts.voiceURI ?? '');
+    if (!v) return resolve();
+    const synth = window.speechSynthesis;
+    synth.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = 'en-US';
+    u.rate = rate;
+    u.voice = v;
+    u.onend = () => resolve();
+    u.onerror = () => resolve();
+    synth.speak(u);
+  });
+}
+
 export function stopSpeaking(): void {
   if (current) {
     current.pause();

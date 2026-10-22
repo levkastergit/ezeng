@@ -22,7 +22,10 @@ export function WordCard({ word, settings }: { word: Word; settings: Settings })
           </button>
           <div className="word-en">{word.en}</div>
         </div>
-        <div className="word-ipa">{word.ipa}</div>
+        <div className="word-ipa">
+          {word.ipa}
+          {word.cy && <span className="word-cy">{word.cy}</span>}
+        </div>
         <div className="word-ru">{word.ru}</div>
       </div>
       <button className="word-example" onClick={() => speak(word.ex, settings)}>

@@ -15,11 +15,11 @@ items_out = sys.argv[1]
 texts = []
 seen = set()
 pattern = re.compile(r'\b(?:en|ex)\s*:\s*"((?:[^"\\]|\\.)*)"')
-for f in sorted(glob.glob(os.path.join(root, 'src', 'data', 'm*.ts'))):
+for f in sorted(glob.glob(os.path.join(root, 'src', 'data', '*.ts'))):
     src = open(f, encoding='utf-8').read()
     for m in pattern.finditer(src):
-        t = m.group(1).replace('\\"', '"')
-        if t not in seen:
+        t = m.group(1).replace('\\"', '"').strip()
+        if t and t not in seen:
             seen.add(t)
             texts.append(t)
 

@@ -27,6 +27,13 @@ export interface Settings {
   unlockAll: boolean;
 }
 
+export interface CustomSong {
+  id: string;
+  title: string;
+  lines: { en: string; ru: string }[];
+  createdAt: number;
+}
+
 export interface Progress {
   version: 1;
   xp: number;
@@ -34,6 +41,7 @@ export interface Progress {
   lessons: Record<string, LessonState>;
   words: Record<string, WordState>;
   settings: Settings;
+  customSongs: CustomSong[];
   createdAt: number;
 }
 
@@ -56,6 +64,7 @@ export function defaultProgress(): Progress {
     lessons: {},
     words: {},
     settings: { ...defaultSettings },
+    customSongs: [],
     createdAt: Date.now(),
   };
 }
@@ -73,6 +82,7 @@ export function loadProgress(): Progress {
       lessons: parsed.lessons ?? {},
       words: parsed.words ?? {},
       settings: { ...defaultSettings, ...(parsed.settings ?? {}) },
+      customSongs: Array.isArray(parsed.customSongs) ? parsed.customSongs : [],
     };
   } catch {
     return defaultProgress();

@@ -42,7 +42,12 @@ export function ChoiceExercise({ ex, disabled, result, onState, settings }: ExPr
           <WordImage img={ex.word.img} size={72} fallback="?" />
         )}
         <div className="prompt-word">{isEn ? ex.word.en : shortRu(ex.word.ru)}</div>
-        {isEn && <div className="prompt-ipa">{ex.word.ipa}</div>}
+        {isEn && (
+          <div className="prompt-ipa">
+            {ex.word.ipa}
+            {ex.word.cy ? ` · ${ex.word.cy}` : ''}
+          </div>
+        )}
       </div>
       <div className="options">
         {ex.options.map((o, i) => {

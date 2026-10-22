@@ -143,6 +143,51 @@ export const IconTrophy = ({ size, ...p }: P) => (
   </svg>
 );
 
+export const IconMusic = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M9 18V6l10-2.5V16" />
+    <circle cx="6.5" cy="18" r="2.5" />
+    <circle cx="16.5" cy="16" r="2.5" />
+  </svg>
+);
+
+export const IconWave = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M3 12h2l2.5-5 3 10 3-14 3 12 2.5-6 1.5 3H22" />
+  </svg>
+);
+
+export const IconSpeech = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M4 5.5h16v10.5H9.5L5 20v-4H4V5.5z" />
+    <path d="M8 9.5h8M8 12.5h5" />
+  </svg>
+);
+
+export const IconPlay = ({ size, ...p }: P) => (
+  <svg {...base(size, p)} fill="currentColor" stroke="none">
+    <path d="M7 4.5v15l12-7.5L7 4.5z" />
+  </svg>
+);
+
+export const IconStop = ({ size, ...p }: P) => (
+  <svg {...base(size, p)} fill="currentColor" stroke="none">
+    <rect x="6" y="6" width="12" height="12" rx="2" />
+  </svg>
+);
+
+export const IconTrash = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+  </svg>
+);
+
+export const IconArrowLeft = ({ size, ...p }: P) => (
+  <svg {...base(size, p)}>
+    <path d="M19 12H5M11 6l-6 6 6 6" />
+  </svg>
+);
+
 export const IconClock = ({ size, ...p }: P) => (
   <svg {...base(size, p)}>
     <circle cx="12" cy="12" r="8.5" />

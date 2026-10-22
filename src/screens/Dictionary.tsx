@@ -71,7 +71,10 @@ export function Dictionary() {
               <WordImage img={r.word.img} size={40} className="dict-img" fallback={r.word.en.slice(0, 1).toUpperCase()} />
               <div className="dict-en">
                 <b>{r.word.en}</b>
-                <span className="dict-ipa">{r.word.ipa}</span>
+                <span className="dict-ipa">
+                  {r.word.ipa}
+                  {r.word.cy ? ` · ${r.word.cy}` : ''}
+                </span>
               </div>
               <div className="dict-ru">{r.word.ru}</div>
               <div className="dict-meta">

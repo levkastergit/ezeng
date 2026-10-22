@@ -11,6 +11,9 @@ import { ReviewScreen } from './screens/ReviewScreen';
 import { Dictionary } from './screens/Dictionary';
 import { Profile } from './screens/Profile';
 import { SettingsScreen } from './screens/Settings';
+import { SoundsScreen } from './screens/SoundsScreen';
+import { TwistersScreen } from './screens/TwistersScreen';
+import { SongsScreen } from './screens/SongsScreen';
 
 type Screen = { name: NavName } | { name: 'lesson'; lessonId: string };
 
@@ -47,6 +50,9 @@ export default function App() {
           {screen.name === 'lesson' && <LessonScreen key={screen.lessonId} lessonId={screen.lessonId} onExit={() => setScreen({ name: 'home' })} />}
           {screen.name === 'review' && <ReviewScreen onGoHome={() => setScreen({ name: 'home' })} />}
           {screen.name === 'dictionary' && <Dictionary />}
+          {screen.name === 'sounds' && <SoundsScreen />}
+          {screen.name === 'twisters' && <TwistersScreen />}
+          {screen.name === 'songs' && <SongsScreen />}
           {screen.name === 'profile' && <Profile />}
           {screen.name === 'settings' && <SettingsScreen />}
         </div>

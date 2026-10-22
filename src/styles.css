@@ -1890,6 +1890,415 @@ p {
   font-size: 14px;
 }
 
+/* ---------- cyrillic readings ---------- */
+
+.word-cy {
+  display: inline-block;
+  margin-left: 10px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--yellow-light);
+  color: #8a6a00;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+/* ---------- sounds & alphabet ---------- */
+
+.alphabet {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(96px, 1fr));
+  gap: 10px;
+}
+
+.letter {
+  background: var(--bg);
+  border: 2px solid transparent;
+  border-radius: 16px;
+  padding: 10px 6px;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  transition: border-color 0.12s, background 0.12s;
+}
+
+.letter:hover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.letter-big {
+  font-size: 30px;
+  font-weight: 900;
+  line-height: 1;
+  color: var(--text);
+}
+
+.letter-big small {
+  font-size: 22px;
+  font-weight: 600;
+  margin-left: 2px;
+  color: var(--muted);
+}
+
+.letter-name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--blue-dark);
+}
+
+.sound-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sound-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-top: 1px solid var(--line);
+}
+
+.sound-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-items: flex-start;
+}
+
+.sound-ipa {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--blue-dark);
+  background: var(--blue-light);
+  border-radius: 12px;
+  padding: 6px 12px;
+}
+
+.sound-cy {
+  font-size: 15px;
+  font-weight: 700;
+  color: #8a6a00;
+  background: var(--yellow-light);
+  border-radius: 10px;
+  padding: 3px 10px;
+}
+
+.sound-title {
+  font-weight: 800;
+  font-size: 16px;
+  margin-bottom: 4px;
+}
+
+.sound-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.example-chip,
+.chip-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.example-chip:hover,
+.chip-btn:hover {
+  border-color: var(--blue);
+  background: var(--blue-light);
+}
+
+.legend {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.legend li {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.legend b {
+  color: #8a6a00;
+  background: var(--yellow-light);
+  border-radius: 8px;
+  padding: 2px 10px;
+  font-size: 15px;
+  justify-self: start;
+}
+
+/* ---------- toggles ---------- */
+
+.toggles {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.toggle {
+  border: 2px solid var(--line);
+  background: #fff;
+  border-radius: 999px;
+  padding: 7px 14px;
+  font-weight: 600;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.toggle.on {
+  border-color: var(--blue);
+  background: var(--blue-light);
+  color: var(--blue-dark);
+}
+
+/* ---------- tongue twisters ---------- */
+
+.twister-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.twister-card {
+  margin-bottom: 0;
+}
+
+.twister-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.twister-num {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: var(--blue);
+  color: #fff;
+  font-weight: 800;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+.twister-focus {
+  margin-bottom: 0;
+}
+
+.twister-en {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.twister-cy {
+  color: #8a6a00;
+  font-size: 16px;
+  margin-top: 4px;
+}
+
+.twister-ru {
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.twister-tip {
+  margin: 10px 0 14px;
+  padding: 10px 14px;
+  background: var(--bg);
+  border-radius: 12px;
+  font-size: 14px;
+}
+
+/* ---------- songs ---------- */
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: none;
+  border: none;
+  color: var(--blue);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 14px;
+  font-size: 15px;
+}
+
+.song-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.song-note {
+  margin-top: 8px;
+  max-width: 640px;
+}
+
+.song-controls {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.song-controls .toggles {
+  margin-bottom: 0;
+}
+
+.song-controls .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.song-warn {
+  margin-bottom: 14px;
+}
+
+.lyrics {
+  padding: 10px 18px;
+}
+
+.song-line {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  padding: 10px 8px;
+  border-radius: 14px;
+  transition: background 0.15s;
+}
+
+.song-line.playing {
+  background: var(--blue-light);
+}
+
+.song-line-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.song-en {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.song-cy {
+  color: #8a6a00;
+  font-size: 15px;
+}
+
+.song-ru {
+  color: var(--muted);
+  font-size: 15px;
+}
+
+.song-gap {
+  height: 18px;
+}
+
+.song-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.song-card {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  text-align: left;
+  background: var(--card);
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  padding: 16px;
+  cursor: pointer;
+  transition: border-color 0.15s, box-shadow 0.15s, transform 0.1s;
+}
+
+.song-card:hover {
+  border-color: var(--blue);
+  box-shadow: var(--shadow);
+  transform: translateY(-1px);
+}
+
+.song-card-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 14px;
+  background: var(--purple-light);
+  color: var(--purple);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.song-card-title {
+  font-weight: 800;
+  font-size: 17px;
+}
+
+.song-card-note {
+  font-size: 13px;
+  color: var(--muted);
+  margin-top: 6px;
+}
+
+.add-song {
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.add-song .quick-emoji {
+  font-size: 30px;
+  color: var(--blue);
+  background: var(--blue-light);
+}
+
+.field textarea {
+  font-family: inherit;
+  font-size: 15px;
+  padding: 10px 14px;
+  border: 2px solid var(--line);
+  border-radius: 12px;
+  outline: none;
+  background: #fff;
+  color: var(--text);
+  resize: vertical;
+  line-height: 1.5;
+}
+
+.field textarea:focus {
+  border-color: var(--blue);
+}
+
 /* ---------- updates ---------- */
 
 .nav-dot {

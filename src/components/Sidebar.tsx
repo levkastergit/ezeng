@@ -1,9 +1,20 @@
 import type { ReactNode } from 'react';
 import { Mascot } from './Mascot';
 import { useUpdateState } from '../lib/updater';
-import { IconBook, IconFlame, IconGear, IconPath, IconRefresh, IconUser, IconBolt } from './Icons';
+import {
+  IconBook,
+  IconBolt,
+  IconFlame,
+  IconGear,
+  IconMusic,
+  IconPath,
+  IconRefresh,
+  IconSpeech,
+  IconUser,
+  IconWave,
+} from './Icons';
 
-export type NavName = 'home' | 'review' | 'dictionary' | 'profile' | 'settings';
+export type NavName = 'home' | 'review' | 'dictionary' | 'sounds' | 'twisters' | 'songs' | 'profile' | 'settings';
 
 interface Props {
   current: NavName;
@@ -17,6 +28,9 @@ const items: { name: NavName; label: string; icon: ReactNode }[] = [
   { name: 'home', label: 'Уроки', icon: <IconPath size={22} /> },
   { name: 'review', label: 'Повторение', icon: <IconRefresh size={22} /> },
   { name: 'dictionary', label: 'Словарь', icon: <IconBook size={22} /> },
+  { name: 'sounds', label: 'Звуки и алфавит', icon: <IconWave size={22} /> },
+  { name: 'twisters', label: 'Скороговорки', icon: <IconSpeech size={22} /> },
+  { name: 'songs', label: 'Песни', icon: <IconMusic size={22} /> },
   { name: 'profile', label: 'Профиль', icon: <IconUser size={22} /> },
   { name: 'settings', label: 'Настройки', icon: <IconGear size={22} /> },
 ];

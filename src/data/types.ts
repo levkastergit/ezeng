@@ -6,6 +6,8 @@ export interface Word {
   exRu: string;
   /** Emoji used as the word's illustration (rendered from the bundled Twemoji SVG set). */
   img?: string;
+  /** Practical Russian reading, e.g. "хэло́у" (generated from `ipa` by scripts/add-cyrillic-words.py). */
+  cy?: string;
 }
 
 export interface Sentence {
