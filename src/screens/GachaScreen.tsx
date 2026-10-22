@@ -28,6 +28,7 @@ import { plural } from '../lib/utils';
 import { Button } from '../components/Button';
 import { ProgressBar } from '../components/ProgressBar';
 import { WordImage } from '../components/WordImage';
+import { RevealCard } from '../components/RevealCard';
 import { IconClose, IconSpeaker } from '../components/Icons';
 
 type Filter = 'all' | Rarity;
@@ -318,26 +319,5 @@ export function GachaScreen() {
         </div>
       )}
     </div>
-  );
-}
-
-function RevealCard({ result, open, onClick }: { result: PullResult; open: boolean; onClick: () => void }) {
-  const { card } = result;
-  return (
-    <button className={`gcard ${card.rarity}${open ? ' open' : ''}`} style={{ '--rc': RARITY[card.rarity].color } as CSSProperties} onClick={onClick}>
-      <div className="gcard-inner">
-        <div className="gcard-front">
-          <span>✦</span>
-        </div>
-        <div className="gcard-back">
-          <div className="grarity-tag">{RARITY[card.rarity].title}</div>
-          <WordImage img={card.word.img} size={64} fallback={card.word.en[0]?.toUpperCase()} />
-          <div className="gcard-en">{card.word.en}</div>
-          {card.word.cy && <div className="gcard-cy">{card.word.cy}</div>}
-          <div className="gcard-ru">{card.word.ru}</div>
-          {result.isNew ? <span className="gcard-new">новая</span> : <span className="gcard-dupe">×{result.copies} · +{result.shards} 🧩</span>}
-        </div>
-      </div>
-    </button>
   );
 }

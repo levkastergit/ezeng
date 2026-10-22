@@ -63,6 +63,8 @@ export interface DailyStats {
   bonus?: boolean;
   /** Gacha pulls made today. */
   gacha?: number;
+  /** Arcade games played today (chests, wheel, slots, bets). */
+  games?: number;
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
@@ -86,11 +88,25 @@ export interface GachaState {
   shards: number;
   /** Crystals obtained by exchanging shards. */
   exchanged: number;
+  /** Crystals won in the arcade games. */
+  won: number;
+  /** Unused x2 XP boosters. */
+  boosts: number;
+  wheelSpins: number;
+  wheelLastFree?: string;
+  slotSpins: number;
+  slotJackpots: number;
+  /** Opened chests per tier. */
+  chests: Record<string, number>;
+  betPlayed: number;
+  betWon: number;
+  /** Biggest single win in the word bet. */
+  betBest: number;
   cards: Record<string, GachaCardState>;
 }
 
 export function emptyGacha(): GachaState {
-  return { spent: 0, pulls: 0, pity: 0, shards: 0, exchanged: 0, cards: {} };
+  return { spent: 0, pulls: 0, pity: 0, shards: 0, exchanged: 0, won: 0, boosts: 0, wheelSpins: 0, slotSpins: 0, slotJackpots: 0, chests: {}, betPlayed: 0, betWon: 0, betBest: 0, cards: {} };
 }
 
 export interface Progress {
@@ -172,7 +188,7 @@ export function normalizeProgress(parsed: Partial<Progress>): Progress {
       talesDone: Array.isArray(parsed.talesDone) ? parsed.talesDone : [],
       achievements: parsed.achievements && typeof parsed.achievements === 'object' ? parsed.achievements : {},
       daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
-      gacha: parsed.gacha && typeof parsed.gacha === 'object' ? { ...emptyGacha(), ...parsed.gacha, cards: parsed.gacha.cards ?? {} } : emptyGacha(),
+      gacha: parsed.gacha && typeof parsed.gacha === 'object' ? { ...emptyGacha(), ...parsed.gacha, cards: parsed.gacha.cards ?? {}, chests: parsed.gacha.chests ?? {} } : emptyGacha(),
   };
 }
 

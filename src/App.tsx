@@ -29,7 +29,7 @@ import { ReviewScreen } from './screens/ReviewScreen';
 import { Dictionary } from './screens/Dictionary';
 import { Profile } from './screens/Profile';
 import { AchievementsScreen } from './screens/AchievementsScreen';
-import { GachaScreen } from './screens/GachaScreen';
+import { ArcadeScreen } from './screens/ArcadeScreen';
 import { SettingsScreen } from './screens/Settings';
 import { SoundsScreen } from './screens/SoundsScreen';
 import { TwistersScreen } from './screens/TwistersScreen';
@@ -295,7 +295,7 @@ export default function App() {
             {screen.name === 'test' && <TestScreen />}
             {screen.name === 'profile' && <Profile />}
             {screen.name === 'achievements' && <AchievementsScreen />}
-            {screen.name === 'gacha' && <GachaScreen />}
+            {screen.name === 'gacha' && <ArcadeScreen />}
             {screen.name === 'settings' && <SettingsScreen />}
           </div>
         </div>

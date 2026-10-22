@@ -1,6 +1,6 @@
 import { modules, wordKey } from '../data/course';
 import type { Lesson, Module, Word } from '../data/types';
-import type { GachaState, Progress, Rarity } from './storage';
+import type { GachaState, Progress, Rarity, WordState } from './storage';
 import { bumpDaily, emptyGacha } from './storage';
 import { initWord } from './srs';
 import { hashStr } from './stats';
@@ -66,7 +66,7 @@ export function crystalsEarned(p: Progress): number {
   const g = gachaOf(p);
   const achievements = Object.keys(p.achievements ?? {}).length;
   const questDays = Object.values(p.daily ?? {}).filter((d) => d.bonus).length;
-  return Math.floor(p.xp / XP_PER_CRYSTAL) + achievements * CRYSTALS_PER_ACHIEVEMENT + questDays * CRYSTALS_PER_QUEST_DAY + g.exchanged;
+  return Math.floor(p.xp / XP_PER_CRYSTAL) + achievements * CRYSTALS_PER_ACHIEVEMENT + questDays * CRYSTALS_PER_QUEST_DAY + g.exchanged + g.won;
 }
 
 export function crystalsAvailable(p: Progress): number {
@@ -103,13 +103,18 @@ export interface PullResult {
   shards: number;
 }
 
-function rollRarity(pity: number, rnd: () => number): Rarity {
-  if (pity + 1 >= PITY_LIMIT) return 'legendary';
+/** Random rarity by the banner chances (no pity). */
+export function randomRarity(rnd: () => number = Math.random): Rarity {
   const r = rnd() * 100;
   if (r < RARITY.legendary.chance) return 'legendary';
   if (r < RARITY.legendary.chance + RARITY.epic.chance) return 'epic';
   if (r < RARITY.legendary.chance + RARITY.epic.chance + RARITY.rare.chance) return 'rare';
   return 'common';
+}
+
+function rollRarity(pity: number, rnd: () => number): Rarity {
+  if (pity + 1 >= PITY_LIMIT) return 'legendary';
+  return randomRarity(rnd);
 }
 
 export function pullCost(count: 1 | 10, free: boolean): number {
@@ -118,24 +123,11 @@ export function pullCost(count: 1 | 10, free: boolean): number {
 }
 
 /**
- * Performs one or ten pulls. Pure: returns the updated progress and the drawn cards.
- * Returns null when the player cannot afford it.
+ * Adds one random card of each requested rarity to the collection (duplicates give shards)
+ * and puts new words into the dictionary. Shared by the gacha and the arcade prizes.
  */
-export function doPull(p: Progress, count: 1 | 10, free: boolean, now: number = Date.now(), rnd: () => number = Math.random): { progress: Progress; results: PullResult[] } | null {
-  const cost = pullCost(count, free);
-  if (crystalsAvailable(p) < cost) return null;
-  const g: GachaState = { ...gachaOf(p), cards: { ...gachaOf(p).cards } };
-  const words = { ...p.words };
-  const results: PullResult[] = [];
-  const rarities: Rarity[] = [];
-  for (let i = 0; i < count; i++) {
-    const r = rollRarity(g.pity, rnd);
-    rarities.push(r);
-    g.pity = r === 'legendary' ? 0 : g.pity + 1;
-  }
-  // A ten-pull always contains at least one epic or legendary card.
-  if (count === 10 && !rarities.some((r) => r === 'epic' || r === 'legendary')) rarities[count - 1] = 'epic';
-  rarities.forEach((r) => {
+export function drawCards(g: GachaState, words: Record<string, WordState>, rarities: Rarity[], now: number, rnd: () => number = Math.random): PullResult[] {
+  return rarities.map((r) => {
     const pool = POOLS[r].length ? POOLS[r] : ALL_CARDS;
     const card = pool[Math.floor(rnd() * pool.length)];
     const prev = g.cards[card.key];
@@ -145,8 +137,32 @@ export function doPull(p: Progress, count: 1 | 10, free: boolean, now: number = 
     g.cards[card.key] = { r, n: copies, at: prev?.at ?? now };
     g.shards += shards;
     if (!words[card.key]) words[card.key] = initWord(card.key, card.lesson.id, card.word.en, now);
-    results.push({ card, isNew, copies, shards });
+    return { card, isNew, copies, shards };
   });
+}
+
+/** Mutable working copy of the gacha state and the dictionary for one transaction. */
+export function beginTx(p: Progress): { g: GachaState; words: Record<string, WordState> } {
+  return { g: { ...gachaOf(p), cards: { ...gachaOf(p).cards }, chests: { ...gachaOf(p).chests } }, words: { ...p.words } };
+}
+
+/**
+ * Performs one or ten pulls. Pure: returns the updated progress and the drawn cards.
+ * Returns null when the player cannot afford it.
+ */
+export function doPull(p: Progress, count: 1 | 10, free: boolean, now: number = Date.now(), rnd: () => number = Math.random): { progress: Progress; results: PullResult[] } | null {
+  const cost = pullCost(count, free);
+  if (crystalsAvailable(p) < cost) return null;
+  const { g, words } = beginTx(p);
+  const rarities: Rarity[] = [];
+  for (let i = 0; i < count; i++) {
+    const r = rollRarity(g.pity, rnd);
+    rarities.push(r);
+    g.pity = r === 'legendary' ? 0 : g.pity + 1;
+  }
+  // A ten-pull always contains at least one epic or legendary card.
+  if (count === 10 && !rarities.some((r) => r === 'epic' || r === 'legendary')) rarities[count - 1] = 'epic';
+  const results = drawCards(g, words, rarities, now, rnd);
   g.pulls += count;
   g.spent += cost;
   if (free) g.lastFree = dateKey(new Date(now));

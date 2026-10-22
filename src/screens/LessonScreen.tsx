@@ -22,6 +22,7 @@ interface Reward {
   stars: number;
   newWords: number;
   accuracy: number;
+  boosted: boolean;
 }
 
 export function LessonScreen({ lessonId, onExit }: Props) {
@@ -45,7 +46,8 @@ export function LessonScreen({ lessonId, onExit }: Props) {
     const answered = r.correct + r.wrong + r.skipped;
     const accuracy = answered > 0 ? r.correct / answered : 1;
     const stars = r.wrong === 0 && r.skipped === 0 ? 3 : accuracy >= 0.8 ? 2 : 1;
-    const xp = 10 + r.correct;
+    const boosted = (progress.gacha?.boosts ?? 0) > 0;
+    const xp = (10 + r.correct) * (boosted ? 2 : 1);
     const now = Date.now();
     const newWords = lesson.words.filter((w) => !progress.words[wordKey(lesson.id, w.en)]).length;
 
@@ -66,9 +68,10 @@ export function LessonScreen({ lessonId, onExit }: Props) {
         },
       };
       const dk = dateKey();
-      return bumpDaily({ ...p, xp: p.xp + xp, days: { ...p.days, [dk]: (p.days[dk] ?? 0) + xp }, lessons, words }, { lessons: 1, correct: r.correct });
+      const gacha = boosted && p.gacha ? { ...p.gacha, boosts: Math.max(0, p.gacha.boosts - 1) } : p.gacha;
+      return bumpDaily({ ...p, xp: p.xp + xp, days: { ...p.days, [dk]: (p.days[dk] ?? 0) + xp }, lessons, words, gacha }, { lessons: 1, correct: r.correct });
     });
-    setReward({ xp, stars, newWords, accuracy });
+    setReward({ xp, stars, newWords, accuracy, boosted });
   };
 
   if (reward) {
@@ -87,7 +90,7 @@ export function LessonScreen({ lessonId, onExit }: Props) {
           <div className="result-stats">
             <div className="result-stat">
               <b>+{reward.xp}</b>
-              <span>XP</span>
+              <span>{reward.boosted ? 'XP (бустер ×2)' : 'XP'}</span>
             </div>
             <div className="result-stat">
               <b>{Math.round(reward.accuracy * 100)}%</b>

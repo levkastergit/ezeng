@@ -82,6 +82,7 @@ const SLOT_C: QuestDef[] = [
   { id: 'goal', emoji: '⚡', title: 'Выполни цель дня по XP', target: 0, value: (p, _d, date) => p.days[date] ?? 0 },
   { id: 'tale1', emoji: '📖', title: 'Дочитай одну сказку', target: 1, value: (_p, d) => d.tales },
   { id: 'gacha3', emoji: '🎰', title: 'Сделай 3 крутки в гаче', target: 3, value: (_p, d) => d.gacha ?? 0 },
+  { id: 'games3', emoji: '🎡', title: 'Сыграй 3 раза в игровой (сундуки, колесо, слоты, ставка)', target: 3, value: (_p, d) => d.games ?? 0 },
 ];
 
 /** Three quests for the day: the set depends on the date only, so it stays the same all day. */

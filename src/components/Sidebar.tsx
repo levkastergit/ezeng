@@ -51,7 +51,7 @@ const items: { name: NavName; label: string; icon: ReactNode }[] = [
   { name: 'test', label: 'Тест уровня', icon: <IconTrophy size={22} /> },
   { name: 'profile', label: 'Профиль', icon: <IconUser size={22} /> },
   { name: 'achievements', label: 'Достижения', icon: <IconMedal size={22} /> },
-  { name: 'gacha', label: 'Гача', icon: <IconGem size={22} /> },
+  { name: 'gacha', label: 'Гача и игры', icon: <IconGem size={22} /> },
   { name: 'settings', label: 'Настройки', icon: <IconGear size={22} /> },
 ];
 
