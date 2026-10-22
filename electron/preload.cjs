@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('ezeng', {
     download: () => ipcRenderer.invoke('update:download'),
     install: () => ipcRenderer.invoke('update:install'),
     openReleases: () => ipcRenderer.invoke('update:open-releases'),
+    openLog: () => ipcRenderer.invoke('update:open-log'),
     onAvailable: subscribe('update:available'),
     onProgress: subscribe('update:progress'),
     onDownloaded: subscribe('update:downloaded'),

@@ -1,17 +1,31 @@
 import { Button } from './Button';
 import { ProgressBar } from './ProgressBar';
-import { checkForUpdates, downloadUpdate, installUpdate, openReleasesPage, useUpdateState } from '../lib/updater';
+import {
+  checkForUpdates,
+  downloadUpdate,
+  installUpdate,
+  openReleasesPage,
+  openUpdateLog,
+  useUpdateState,
+} from '../lib/updater';
 
 interface Props {
   /** Compact banner for the home screen; otherwise the full settings card. */
   compact?: boolean;
 }
 
+const REASON_TEXT: Record<string, string> = {
+  portable: 'Это портативная версия: она не обновляется автоматически. Скачайте новый файл со страницы релизов.',
+  dev: 'Это сборка для разработки, автообновление отключено.',
+  missing: 'Модуль обновлений недоступен в этой сборке.',
+  browser: 'Обновления работают только в установленном приложении.',
+};
+
 export function UpdatePanel({ compact = false }: Props) {
   const s = useUpdateState();
 
   if (compact) {
-    if (s.phase !== 'available' && s.phase !== 'downloading' && s.phase !== 'downloaded') return null;
+    if (s.phase !== 'available' && s.phase !== 'manual' && s.phase !== 'downloading' && s.phase !== 'downloaded') return null;
     return (
       <div className="update-banner">
         <div className="update-banner-text">
@@ -19,6 +33,12 @@ export function UpdatePanel({ compact = false }: Props) {
             <>
               <b>Доступна версия {s.version}</b>
               <span>Можно обновиться прямо из приложения.</span>
+            </>
+          )}
+          {s.phase === 'manual' && (
+            <>
+              <b>Доступна версия {s.version}</b>
+              <span>Скачайте новую версию со страницы релизов.</span>
             </>
           )}
           {s.phase === 'downloading' && (
@@ -39,6 +59,11 @@ export function UpdatePanel({ compact = false }: Props) {
             Обновить
           </Button>
         )}
+        {s.phase === 'manual' && (
+          <Button variant="secondary" onClick={openReleasesPage}>
+            Скачать
+          </Button>
+        )}
         {s.phase === 'downloaded' && (
           <Button variant="secondary" onClick={installUpdate}>
             Перезапустить
@@ -51,13 +76,22 @@ export function UpdatePanel({ compact = false }: Props) {
   let body;
   switch (s.phase) {
     case 'idle':
-      body = <p className="muted">Нажмите кнопку, чтобы проверить наличие новой версии на GitHub.</p>;
+      body = (
+        <p className="muted">
+          Текущая версия {__APP_VERSION__}. Нажмите кнопку, чтобы узнать, есть ли новая версия на GitHub.
+        </p>
+      );
       break;
     case 'checking':
-      body = <p className="muted">Проверяем…</p>;
+      body = <p className="muted">Проверяем на GitHub… Обычно это занимает пару секунд.</p>;
       break;
     case 'none':
-      body = <p className="update-ok">У вас последняя версия ({s.latest}).</p>;
+      body = (
+        <p className="update-ok">
+          У вас последняя версия ({s.latest}).
+          {s.reason === 'portable' ? ' Портативная версия обновляется вручную, когда выйдет новая.' : ''}
+        </p>
+      );
       break;
     case 'available':
       body = (
@@ -66,10 +100,19 @@ export function UpdatePanel({ compact = false }: Props) {
         </p>
       );
       break;
+    case 'manual':
+      body = (
+        <p>
+          <b>Доступна версия {s.version}.</b> {REASON_TEXT[s.reason]} Скачайте новый файл и запустите его вместо текущего, прогресс обучения сохранится.
+        </p>
+      );
+      break;
     case 'downloading':
       body = (
         <div>
-          <p className="muted">Загрузка версии {s.version}: {Math.round(s.percent)}%</p>
+          <p className="muted">
+            Загрузка версии {s.version}: {Math.round(s.percent)}%
+          </p>
           <ProgressBar value={s.percent / 100} height={10} className="update-bar" />
         </div>
       );
@@ -82,21 +125,17 @@ export function UpdatePanel({ compact = false }: Props) {
       );
       break;
     case 'unsupported':
-      body = (
-        <p className="muted">
-          {s.reason === 'portable'
-            ? 'Это портативная версия: она не обновляется автоматически. Скачайте новую версию со страницы релизов.'
-            : s.reason === 'browser'
-              ? 'Обновления работают только в установленном приложении.'
-              : 'Автообновление доступно только в установленной версии (EzEng-Setup). Новую версию можно скачать со страницы релизов.'}
-        </p>
-      );
+      body = <p className="muted">{REASON_TEXT[s.reason]}</p>;
       break;
     case 'error':
       body = (
-        <p className="update-error">
-          Не удалось проверить обновления: {s.message}. Проверьте подключение к интернету или скачайте версию вручную.
-        </p>
+        <div>
+          <p className="update-error">Не удалось проверить обновления: {s.message}.</p>
+          <p className="muted">
+            Проверьте подключение к интернету или скачайте версию вручную со страницы релизов.
+            {s.logPath ? ' Подробности записаны в updater.log.' : ''}
+          </p>
+        </div>
       );
       break;
   }
@@ -108,19 +147,25 @@ export function UpdatePanel({ compact = false }: Props) {
       {body}
       <div className="btn-row left">
         {s.phase === 'available' && <Button onClick={() => void downloadUpdate()}>Скачать и установить</Button>}
+        {s.phase === 'manual' && <Button onClick={openReleasesPage}>Открыть страницу загрузки</Button>}
         {s.phase === 'downloaded' && (
           <Button variant="success" onClick={installUpdate}>
             Перезапустить и установить
           </Button>
         )}
-        {s.phase !== 'available' && s.phase !== 'downloaded' && (
+        {s.phase !== 'available' && s.phase !== 'downloaded' && s.phase !== 'manual' && (
           <Button variant={s.phase === 'unsupported' ? 'secondary' : 'primary'} disabled={busy} onClick={() => void checkForUpdates()}>
-            {s.phase === 'checking' ? 'Проверяем…' : 'Проверить обновления'}
+            {s.phase === 'checking' ? 'Проверяем…' : s.phase === 'idle' ? 'Проверить обновления' : 'Проверить ещё раз'}
           </Button>
         )}
         <Button variant="ghost" onClick={openReleasesPage}>
           Страница релизов
         </Button>
+        {s.phase === 'error' && s.logPath && (
+          <Button variant="ghost" onClick={openUpdateLog}>
+            Показать лог
+          </Button>
+        )}
       </div>
     </div>
   );

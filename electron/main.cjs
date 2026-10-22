@@ -6,6 +6,8 @@ const { pathToFileURL } = require('url');
 const APP_SCHEME = 'app';
 const DIST_DIR = path.join(__dirname, '..', 'dist');
 const RELEASES_URL = 'https://github.com/levkastergit/ezeng/releases/latest';
+const LATEST_YML_URL = 'https://github.com/levkastergit/ezeng/releases/latest/download/latest.yml';
+const CHECK_TIMEOUT_MS = 25_000;
 
 let autoUpdater = null;
 try {
@@ -15,6 +17,9 @@ try {
 }
 
 let mainWin = null;
+
+// Tests can point the app at a throw-away profile so real progress is never touched.
+if (process.env.EZENG_USERDATA) app.setPath('userData', process.env.EZENG_USERDATA);
 
 app.setAppUserModelId('com.levkaster.ezeng');
 
@@ -39,6 +44,21 @@ function registerAppProtocol() {
     }
     return net.fetch(pathToFileURL(file).toString());
   });
+}
+
+// ---------------------------------------------------------------- logging
+
+function logPath() {
+  return path.join(app.getPath('userData'), 'updater.log');
+}
+
+function log(level, ...args) {
+  const line = `${new Date().toISOString()} [${level}] ${args.map((a) => (a instanceof Error ? a.stack || a.message : String(a))).join(' ')}\n`;
+  try {
+    fs.appendFileSync(logPath(), line);
+  } catch {
+    // logging must never break the app
+  }
 }
 
 // ---------------------------------------------------------------- updates
@@ -67,6 +87,14 @@ function compareVersions(a, b) {
   return pa.pre.localeCompare(pb.pre);
 }
 
+function withTimeout(promise, ms, label) {
+  let timer;
+  const timeout = new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error(`${label}: нет ответа за ${Math.round(ms / 1000)} с`)), ms);
+  });
+  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
+}
+
 function send(channel, payload) {
   if (mainWin && !mainWin.isDestroyed()) mainWin.webContents.send(channel, payload);
 }
@@ -75,31 +103,58 @@ function setupUpdater() {
   if (!autoUpdater) return;
   autoUpdater.autoDownload = false;
   autoUpdater.autoInstallOnAppQuit = false;
-  autoUpdater.logger = null;
+  autoUpdater.logger = {
+    info: (...a) => log('info', ...a),
+    warn: (...a) => log('warn', ...a),
+    error: (...a) => log('error', ...a),
+    debug: (...a) => log('debug', ...a),
+  };
   autoUpdater.on('download-progress', (p) => {
     send('update:progress', { percent: p.percent, transferred: p.transferred, total: p.total });
   });
   autoUpdater.on('update-downloaded', (info) => {
+    log('info', 'update downloaded', info.version);
     send('update:downloaded', { version: info.version });
   });
   autoUpdater.on('error', (err) => {
+    log('error', 'autoUpdater error', err);
     send('update:error', { message: String((err && err.message) || err) });
   });
 }
 
+/** Reads the version of the latest GitHub release without electron-updater (works for portable/dev builds too). */
+async function fetchLatestVersion() {
+  const res = await net.fetch(LATEST_YML_URL, { cache: 'no-store' });
+  if (!res.ok) throw new Error(`GitHub ответил HTTP ${res.status}`);
+  const text = await res.text();
+  const m = text.match(/^version:\s*(\S+)/m);
+  if (!m) throw new Error('latest.yml не содержит версии');
+  return m[1];
+}
+
 async function checkForUpdate() {
-  const support = updateSupport();
   const current = app.getVersion();
-  if (!support.ok) return { status: 'unsupported', reason: support.reason, current };
+  const support = updateSupport();
+  log('info', `check: current=${current} support=${support.ok ? 'yes' : support.reason}`);
   try {
-    const result = await autoUpdater.checkForUpdates();
+    if (!support.ok) {
+      const latest = await withTimeout(fetchLatestVersion(), CHECK_TIMEOUT_MS, 'Проверка версии');
+      log('info', `latest on GitHub: ${latest}`);
+      if (compareVersions(latest, current) > 0) {
+        return { status: 'manual', version: latest, current, reason: support.reason };
+      }
+      return { status: 'none', current, latest: current, reason: support.reason };
+    }
+    const result = await withTimeout(autoUpdater.checkForUpdates(), CHECK_TIMEOUT_MS, 'Проверка обновлений');
     const latest = result && result.updateInfo && result.updateInfo.version;
+    log('info', `electron-updater latest: ${latest}`);
     if (latest && compareVersions(latest, current) > 0) {
       return { status: 'available', version: latest, current };
     }
-    return { status: 'none', current, latest: latest || current };
+    return { status: 'none', current, latest: current };
   } catch (err) {
-    return { status: 'error', message: String((err && err.message) || err), current };
+    log('error', 'check failed', err);
+    return { status: 'error', message: String((err && err.message) || err), current, logPath: logPath() };
   }
 }
 
@@ -108,18 +163,22 @@ ipcMain.handle('update:check', () => checkForUpdate());
 ipcMain.handle('update:download', async () => {
   if (!updateSupport().ok) return { ok: false, message: 'unsupported' };
   try {
+    log('info', 'download started');
     await autoUpdater.downloadUpdate();
     return { ok: true };
   } catch (err) {
+    log('error', 'download failed', err);
     return { ok: false, message: String((err && err.message) || err) };
   }
 });
 ipcMain.handle('update:install', () => {
   if (!updateSupport().ok) return false;
+  log('info', 'quitAndInstall');
   setImmediate(() => autoUpdater.quitAndInstall(false, true));
   return true;
 });
 ipcMain.handle('update:open-releases', () => shell.openExternal(RELEASES_URL));
+ipcMain.handle('update:open-log', () => shell.showItemInFolder(logPath()));
 
 // ---------------------------------------------------------------- window
 
@@ -185,10 +244,12 @@ function createWindow() {
   }
 
   // Silent check a few seconds after start; the renderer shows a banner if something is new.
-  if (updateSupport().ok && !shot) {
+  if (app.isPackaged && !shot) {
     setTimeout(async () => {
       const r = await checkForUpdate();
-      if (r.status === 'available') send('update:available', { version: r.version });
+      if (r.status === 'available' || r.status === 'manual') {
+        send('update:available', { version: r.version, manual: r.status === 'manual', reason: r.reason });
+      }
     }, 6000);
   }
 }
@@ -196,6 +257,7 @@ function createWindow() {
 Menu.setApplicationMenu(null);
 
 app.whenReady().then(() => {
+  log('info', `start v${app.getVersion()} packaged=${app.isPackaged} portable=${Boolean(process.env.PORTABLE_EXECUTABLE_DIR)}`);
   registerAppProtocol();
   setupUpdater();
   createWindow();
