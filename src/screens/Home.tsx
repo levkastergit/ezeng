@@ -4,6 +4,7 @@ import { allLessons, coreModules, findLesson, themeModules } from '../data/cours
 import type { Lesson, Module } from '../data/types';
 import { useProgress } from '../lib/progressContext';
 import { dueWords, streakDays } from '../lib/srs';
+import { loadSession } from '../lib/sessionStore';
 import { dateKey, pick, plural } from '../lib/utils';
 import { Mascot } from '../components/Mascot';
 import { ProgressBar } from '../components/ProgressBar';
@@ -63,6 +64,7 @@ export function Home({ onOpenLesson, onReview }: Props) {
   const goalPct = Math.min(1, todayXp / goal);
 
   const stars = (l: Lesson) => progress.lessons[l.id]?.stars ?? 0;
+  const paused = useMemo(() => loadSession()?.lessonId ?? null, []);
 
   return (
     <div className="page">
@@ -130,13 +132,13 @@ export function Home({ onOpenLesson, onReview }: Props) {
 
       <h2 className="section-title">Основной курс</h2>
       {coreModules.map((m) => (
-        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} onOpen={onOpenLesson} />
+        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} paused={paused} onOpen={onOpenLesson} />
       ))}
 
       <h2 className="section-title">Тематические модули</h2>
       <p className="section-note">Открыты сразу, проходить можно в любом порядке.</p>
       {themeModules.map((m) => (
-        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} onOpen={onOpenLesson} />
+        <ModuleSection key={m.id} module={m} stars={stars} unlocked={isUnlocked} paused={paused} onOpen={onOpenLesson} />
       ))}
     </div>
   );
@@ -146,10 +148,11 @@ interface ModuleProps {
   module: Module;
   stars: (l: Lesson) => number;
   unlocked: (l: Lesson) => boolean;
+  paused: string | null;
   onOpen: (id: string) => void;
 }
 
-function ModuleSection({ module, stars, unlocked, onOpen }: ModuleProps) {
+function ModuleSection({ module, stars, unlocked, paused, onOpen }: ModuleProps) {
   const done = module.lessons.filter((l) => stars(l) > 0).length;
   return (
     <section className="module">
@@ -165,7 +168,15 @@ function ModuleSection({ module, stars, unlocked, onOpen }: ModuleProps) {
       </header>
       <div className="lesson-grid">
         {module.lessons.map((l) => (
-          <LessonCard key={l.id} lesson={l} color={module.color} stars={stars(l)} locked={!unlocked(l)} onOpen={() => onOpen(l.id)} />
+          <LessonCard
+            key={l.id}
+            lesson={l}
+            color={module.color}
+            stars={stars(l)}
+            locked={!unlocked(l)}
+            paused={paused === l.id}
+            onOpen={() => onOpen(l.id)}
+          />
         ))}
       </div>
     </section>
@@ -177,17 +188,21 @@ interface CardProps {
   color: string;
   stars: number;
   locked: boolean;
+  paused: boolean;
   onOpen: () => void;
 }
 
-function LessonCard({ lesson, color, stars, locked, onOpen }: CardProps) {
+function LessonCard({ lesson, color, stars, locked, paused, onOpen }: CardProps) {
   const status = locked ? 'locked' : stars > 0 ? 'done' : 'open';
   const n = lesson.words.length;
   return (
     <button className={`lesson-card ${status}`} disabled={locked} onClick={onOpen} style={{ '--accent': color } as CSSProperties}>
       <div className={`bubble ${status}`}>{locked ? <IconLock size={26} /> : <span className="bubble-emoji">{lesson.emoji}</span>}</div>
       <div className="lesson-info">
-        <div className="lesson-title">{lesson.title}</div>
+        <div className="lesson-title">
+          {lesson.title}
+          {paused && <span className="paused-badge">продолжить</span>}
+        </div>
         <div className="lesson-sub">{lesson.subtitle}</div>
         <div className="lesson-steps">
           <span className="step">

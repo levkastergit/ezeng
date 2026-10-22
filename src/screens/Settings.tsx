@@ -82,6 +82,10 @@ export function SettingsScreen() {
           <input type="checkbox" checked={s.autoplay} onChange={(e) => set({ autoplay: e.target.checked })} />
           <span>Автоматически озвучивать новые слова и задания на слух</span>
         </label>
+        <label className="field field-row">
+          <input type="checkbox" checked={s.noAudio} onChange={(e) => set({ noAudio: e.target.checked })} />
+          <span>Режим без звука: задания на слух заменяются на обычные, ничего не озвучивается автоматически (кнопки озвучки остаются)</span>
+        </label>
         <Button variant="secondary" onClick={() => speak('Hello! I am learning English.', s)}>
           Проверить озвучку
         </Button>
@@ -92,6 +96,10 @@ export function SettingsScreen() {
         <label className="field field-row">
           <input type="checkbox" checked={s.unlockAll} onChange={(e) => set({ unlockAll: e.target.checked })} />
           <span>Открыть все уроки сразу (без последовательного прохождения)</span>
+        </label>
+        <label className="field field-row">
+          <input type="checkbox" checked={s.turbo} onChange={(e) => set({ turbo: e.target.checked })} />
+          <span>Турбо-режим: ответ проверяется сразу после выбора варианта, верный ответ автоматически ведёт к следующему заданию (переключается и кнопкой ⚡ в уроке)</span>
         </label>
       </div>
 

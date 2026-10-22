@@ -17,7 +17,7 @@ export function BuildExercise({ ex, disabled, result, onState, settings }: ExPro
   }, [placed, ex, onState]);
 
   useEffect(() => {
-    if (ex.listen && settings.autoplay) speak(ex.sentence.en, settings);
+    if (ex.listen && settings.autoplay && !settings.noAudio) speak(ex.sentence.en, settings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ex.id]);
 

@@ -10,11 +10,22 @@ import {
   IconPath,
   IconRefresh,
   IconSpeech,
+  IconTrophy,
   IconUser,
   IconWave,
 } from './Icons';
 
-export type NavName = 'home' | 'review' | 'dictionary' | 'sounds' | 'twisters' | 'songs' | 'profile' | 'settings';
+export type NavName =
+  | 'home'
+  | 'review'
+  | 'dictionary'
+  | 'sounds'
+  | 'twisters'
+  | 'songs'
+  | 'tales'
+  | 'test'
+  | 'profile'
+  | 'settings';
 
 interface Props {
   current: NavName;
@@ -31,6 +42,8 @@ const items: { name: NavName; label: string; icon: ReactNode }[] = [
   { name: 'sounds', label: 'Звуки и алфавит', icon: <IconWave size={22} /> },
   { name: 'twisters', label: 'Скороговорки', icon: <IconSpeech size={22} /> },
   { name: 'songs', label: 'Песни', icon: <IconMusic size={22} /> },
+  { name: 'tales', label: 'Сказки', icon: <IconBook size={22} /> },
+  { name: 'test', label: 'Тест уровня', icon: <IconTrophy size={22} /> },
   { name: 'profile', label: 'Профиль', icon: <IconUser size={22} /> },
   { name: 'settings', label: 'Настройки', icon: <IconGear size={22} /> },
 ];

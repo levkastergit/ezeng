@@ -2,10 +2,11 @@ import { useMemo, useState } from 'react';
 import { findLesson, wordKey } from '../data/course';
 import { buildLessonQueue } from '../lib/exercises';
 import { useProgress } from '../lib/progressContext';
+import { clearSession, loadSession, saveSession } from '../lib/sessionStore';
 import { initWord } from '../lib/srs';
 import { dateKey, plural } from '../lib/utils';
 import { Session } from '../components/Session';
-import type { SessionResult } from '../components/Session';
+import type { SessionResult, SessionSnapshot } from '../components/Session';
 import { Button } from '../components/Button';
 import { Mascot } from '../components/Mascot';
 import { IconStar } from '../components/Icons';
@@ -25,12 +26,21 @@ interface Reward {
 export function LessonScreen({ lessonId, onExit }: Props) {
   const { progress, update } = useProgress();
   const lesson = findLesson(lessonId)?.lesson;
-  const queue = useMemo(() => (lesson ? buildLessonQueue(lesson) : []), [lesson]);
+
+  // Resume a lesson that was left half-way; otherwise build a fresh queue.
+  const saved = useMemo(() => {
+    const s = loadSession();
+    return s && s.lessonId === lessonId ? s : null;
+  }, [lessonId]);
+  const queue = useMemo(() => (lesson ? (saved ? saved.items : buildLessonQueue(lesson)) : []), [lesson, saved]);
   const [reward, setReward] = useState<Reward | null>(null);
 
   if (!lesson) return null;
 
+  const onSnapshot = (s: SessionSnapshot) => saveSession({ lessonId: lesson.id, ...s, savedAt: Date.now() });
+
   const handleFinish = (r: SessionResult) => {
+    clearSession();
     const accuracy = r.total > 0 ? r.correct / r.total : 1;
     const stars = r.wrong === 0 ? 3 : accuracy >= 0.8 ? 2 : 1;
     const xp = 10 + r.correct;
@@ -66,9 +76,7 @@ export function LessonScreen({ lessonId, onExit }: Props) {
         <div className="result-card">
           <Mascot size={170} mood={reward.stars === 3 ? 'excited' : reward.stars === 2 ? 'happy' : 'neutral'} />
           <h1>{title}</h1>
-          <p className="result-sub">
-            Урок «{lesson.title}» завершён
-          </p>
+          <p className="result-sub">Урок «{lesson.title}» завершён</p>
           <div className="stars-row">
             {[1, 2, 3].map((i) => (
               <IconStar key={i} size={44} filled={i <= reward.stars} className={i <= reward.stars ? 'star-on' : 'star-off'} />
@@ -100,10 +108,12 @@ export function LessonScreen({ lessonId, onExit }: Props) {
     <Session
       title={lesson.title}
       queue={queue}
+      initial={saved ?? undefined}
       settings={progress.settings}
       onExit={onExit}
       onFinish={handleFinish}
-      exitConfirm="Выйти из урока? Прогресс этого урока не сохранится."
+      onSnapshot={onSnapshot}
+      onToggleTurbo={(on) => update((p) => ({ ...p, settings: { ...p.settings, turbo: on } }))}
     />
   );
 }

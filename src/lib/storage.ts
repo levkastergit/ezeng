@@ -25,6 +25,10 @@ export interface Settings {
   voiceURI: string;
   autoplay: boolean;
   unlockAll: boolean;
+  /** Turbo: answers are checked as soon as an option is picked; correct answers advance automatically. */
+  turbo: boolean;
+  /** No-audio mode: listening tasks become reading tasks, nothing is auto-played. */
+  noAudio: boolean;
 }
 
 export interface CustomSong {
@@ -32,6 +36,16 @@ export interface CustomSong {
   title: string;
   lines: { en: string; ru: string }[];
   createdAt: number;
+}
+
+export interface TestResult {
+  at: number;
+  /** Overall ability index 0..5 (1 = A1 … 5 = C1). */
+  score: number;
+  level: string;
+  vocab: number;
+  grammar: number;
+  reading: number;
 }
 
 export interface Progress {
@@ -42,6 +56,8 @@ export interface Progress {
   words: Record<string, WordState>;
   settings: Settings;
   customSongs: CustomSong[];
+  tests: TestResult[];
+  talesDone: string[];
   createdAt: number;
 }
 
@@ -54,6 +70,8 @@ export const defaultSettings: Settings = {
   voiceURI: '',
   autoplay: true,
   unlockAll: false,
+  turbo: false,
+  noAudio: false,
 };
 
 export function defaultProgress(): Progress {
@@ -65,6 +83,8 @@ export function defaultProgress(): Progress {
     words: {},
     settings: { ...defaultSettings },
     customSongs: [],
+    tests: [],
+    talesDone: [],
     createdAt: Date.now(),
   };
 }
@@ -83,6 +103,8 @@ export function loadProgress(): Progress {
       words: parsed.words ?? {},
       settings: { ...defaultSettings, ...(parsed.settings ?? {}) },
       customSongs: Array.isArray(parsed.customSongs) ? parsed.customSongs : [],
+      tests: Array.isArray(parsed.tests) ? parsed.tests : [],
+      talesDone: Array.isArray(parsed.talesDone) ? parsed.talesDone : [],
     };
   } catch {
     return defaultProgress();

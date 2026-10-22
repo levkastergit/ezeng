@@ -21,6 +21,9 @@ OVERRIDES = {
     "counter-terrorist": "ка́унтэр-тэ́рэрист",
     "defuse kit": "дифью́з кит",
     "defuse": "дифью́з",
+    "yeah": "йе",
+    "btw": "би ти да́бл-ю",
+    "lol": "лол",
 }
 
 pattern = re.compile(r'(\{ en: "([^"]+)", ru: "[^"]*", ipa: "([^"]+)",)( cy: "[^"]*",)?')

@@ -14,6 +14,8 @@ import { SettingsScreen } from './screens/Settings';
 import { SoundsScreen } from './screens/SoundsScreen';
 import { TwistersScreen } from './screens/TwistersScreen';
 import { SongsScreen } from './screens/SongsScreen';
+import { TalesScreen } from './screens/TalesScreen';
+import { TestScreen } from './screens/TestScreen';
 
 type Screen = { name: NavName } | { name: 'lesson'; lessonId: string };
 
@@ -53,6 +55,8 @@ export default function App() {
           {screen.name === 'sounds' && <SoundsScreen />}
           {screen.name === 'twisters' && <TwistersScreen />}
           {screen.name === 'songs' && <SongsScreen />}
+          {screen.name === 'tales' && <TalesScreen />}
+          {screen.name === 'test' && <TestScreen />}
           {screen.name === 'profile' && <Profile />}
           {screen.name === 'settings' && <SettingsScreen />}
         </div>

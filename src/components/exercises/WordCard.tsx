@@ -7,7 +7,7 @@ import { WordImage } from '../WordImage';
 
 export function WordCard({ word, settings }: { word: Word; settings: Settings }) {
   useEffect(() => {
-    if (settings.autoplay) speak(word.en, settings);
+    if (settings.autoplay && !settings.noAudio) speak(word.en, settings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [word.en]);
 

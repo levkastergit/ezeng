@@ -14,7 +14,7 @@ export function ChoiceExercise({ ex, disabled, result, onState, settings }: ExPr
   }, [sel, ex, onState]);
 
   useEffect(() => {
-    if (ex.dir === 'en-ru' && settings.autoplay) speak(ex.word.en, settings);
+    if (ex.dir === 'en-ru' && settings.autoplay && !settings.noAudio) speak(ex.word.en, settings);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ex.id]);
 

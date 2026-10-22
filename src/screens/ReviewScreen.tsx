@@ -73,6 +73,7 @@ export function ReviewScreen({ onGoHome }: Props) {
         onExit={() => setPhase('intro')}
         onFinish={onFinish}
         onAnswer={onAnswer}
+        onToggleTurbo={(on) => update((p) => ({ ...p, settings: { ...p.settings, turbo: on } }))}
         exitConfirm="Прервать повторение?"
       />
     );
