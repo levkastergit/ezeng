@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react';
 import type { DialogueLine } from '../../data/types';
 import type { Settings } from '../../lib/storage';
 import { speakAsync, stopSpeaking } from '../../lib/tts';
+import { partnerVoice, resolveVoice } from '../../lib/voices';
+import type { VoiceDef } from '../../lib/voices';
 import { Mascot } from '../Mascot';
 import { IconPlay, IconSpeaker, IconStop } from '../Icons';
 
@@ -17,6 +19,10 @@ export function DialogueCard({ lines, speakers, settings }: Props) {
   const [playing, setPlaying] = useState<number | null>(null);
   const [showRu, setShowRu] = useState(true);
   const cancel = useRef(false);
+  // Voices are fixed for the whole dialogue so that each speaker keeps one voice even with the random setting.
+  const voiceA = useRef<VoiceDef>(resolveVoice(settings.voice));
+  const voiceB = settings.dialogueVoices ? partnerVoice(voiceA.current) : voiceA.current;
+  const optsFor = (who: 'A' | 'B') => ({ ...settings, voice: who === 'A' ? voiceA.current.id : voiceB.id });
 
   useEffect(
     () => () => {
@@ -38,7 +44,7 @@ export function DialogueCard({ lines, speakers, settings }: Props) {
     for (let i = 0; i < lines.length; i++) {
       if (cancel.current) return;
       setPlaying(i);
-      await speakAsync(lines[i].en, settings);
+      await speakAsync(lines[i].en, optsFor(lines[i].who));
       if (cancel.current) return;
       await sleep(350);
     }
@@ -49,7 +55,7 @@ export function DialogueCard({ lines, speakers, settings }: Props) {
     stop();
     cancel.current = false;
     setPlaying(i);
-    await speakAsync(lines[i].en, settings);
+    await speakAsync(lines[i].en, optsFor(lines[i].who));
     setPlaying((p) => (p === i ? null : p));
   };
 
@@ -60,9 +66,11 @@ export function DialogueCard({ lines, speakers, settings }: Props) {
         <div className="dialogue-speakers">
           <span className="speaker-tag a">
             <Mascot size={26} mood="happy" shadow={false} /> {speakers.A}
+            <small>{voiceA.current.name}</small>
           </span>
           <span className="speaker-tag b">
             <Mascot size={26} mood="wink" shadow={false} /> {speakers.B}
+            <small>{voiceB.name}</small>
           </span>
         </div>
         <div className="dialogue-controls">

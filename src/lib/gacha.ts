@@ -3,8 +3,8 @@ import type { Lesson, Module, Word } from '../data/types';
 import type { GachaState, Progress, Rarity, WordState } from './storage';
 import { bumpDaily, emptyGacha } from './storage';
 import { initWord } from './srs';
-import { hashStr } from './stats';
-import { dateKey } from './utils';
+import { hashStr, levelFor, sumDaily } from './stats';
+import { addDays, dateKey } from './utils';
 
 export const RARITY: Record<Rarity, { title: string; short: string; color: string; chance: number; shards: number; rank: number }> = {
   common: { title: 'Обычная', short: 'обычная', color: '#8f98a3', chance: 60, shards: 1, rank: 0 },
@@ -62,11 +62,79 @@ export function gachaOf(p: Progress): GachaState {
   return p.gacha ?? emptyGacha();
 }
 
-export function crystalsEarned(p: Progress): number {
+export const CRYSTALS_PER_LESSON = 2;
+export const CRYSTALS_PER_REVIEW = 1;
+export const ENDLESS_ANSWERS_PER_CRYSTAL = 12;
+export const CRYSTALS_PER_TALE = 2;
+export const CRYSTALS_PER_TEST = 3;
+export const CRYSTALS_PER_LEVEL = 5;
+/** Daily login reward by consecutive day (cycles every week). */
+export const LOGIN_REWARDS = [1, 1, 2, 2, 3, 3, 5];
+
+export interface LoginInfo {
+  /** Consecutive login day (1 = first day of a streak). */
+  day: number;
+  /** Crystals for today's login (already granted when `today` is true). */
+  reward: number;
+  /** Crystals granted by all logins so far. */
+  total: number;
+  today: boolean;
+}
+
+function nextDayKey(key: string): string {
+  return dateKey(addDays(new Date(key + 'T00:00:00'), 1));
+}
+
+export function loginInfo(p: Progress, date: string = dateKey()): LoginInfo {
+  const dates = [...new Set(p.logins ?? [])].sort();
+  let total = 0;
+  let day = 0;
+  let prev: string | null = null;
+  let todayReward = 0;
+  let today = false;
+  for (const d of dates) {
+    day = prev && nextDayKey(prev) === d ? day + 1 : 1;
+    const r = LOGIN_REWARDS[(day - 1) % LOGIN_REWARDS.length];
+    total += r;
+    prev = d;
+    if (d === date) {
+      todayReward = r;
+      today = true;
+    }
+  }
+  if (today) return { day, reward: todayReward, total, today: true };
+  const nextDay = prev && nextDayKey(prev) === date ? day + 1 : 1;
+  return { day: nextDay, reward: LOGIN_REWARDS[(nextDay - 1) % LOGIN_REWARDS.length], total, today: false };
+}
+
+export interface CrystalSource {
+  label: string;
+  n: number;
+}
+
+/** Every way crystals are earned, derived from the progress so that the balance matches on all devices. */
+export function crystalSources(p: Progress): CrystalSource[] {
   const g = gachaOf(p);
   const achievements = Object.keys(p.achievements ?? {}).length;
   const questDays = Object.values(p.daily ?? {}).filter((d) => d.bonus).length;
-  return Math.floor(p.xp / XP_PER_CRYSTAL) + achievements * CRYSTALS_PER_ACHIEVEMENT + questDays * CRYSTALS_PER_QUEST_DAY + g.exchanged + g.won;
+  return [
+    { label: `Опыт: 1 за каждые ${XP_PER_CRYSTAL} XP`, n: Math.floor(p.xp / XP_PER_CRYSTAL) },
+    { label: `Пройденные уроки: +${CRYSTALS_PER_LESSON}`, n: sumDaily(p, 'lessons') * CRYSTALS_PER_LESSON },
+    { label: `Повторения слов: +${CRYSTALS_PER_REVIEW}`, n: sumDaily(p, 'reviews') * CRYSTALS_PER_REVIEW },
+    { label: `Бесконечный режим: +1 за ${ENDLESS_ANSWERS_PER_CRYSTAL} ответов`, n: Math.floor((p.endlessAnswers ?? 0) / ENDLESS_ANSWERS_PER_CRYSTAL) },
+    { label: `Прочитанные сказки: +${CRYSTALS_PER_TALE}`, n: p.talesDone.length * CRYSTALS_PER_TALE },
+    { label: `Тесты уровня: +${CRYSTALS_PER_TEST}`, n: p.tests.length * CRYSTALS_PER_TEST },
+    { label: `Новые уровни: +${CRYSTALS_PER_LEVEL}`, n: (levelFor(p.xp).level - 1) * CRYSTALS_PER_LEVEL },
+    { label: `Достижения: +${CRYSTALS_PER_ACHIEVEMENT}`, n: achievements * CRYSTALS_PER_ACHIEVEMENT },
+    { label: `Задания дня: +${CRYSTALS_PER_QUEST_DAY}`, n: questDays * CRYSTALS_PER_QUEST_DAY },
+    { label: 'Ежедневный вход: 1–5 по серии дней', n: loginInfo(p).total },
+    { label: 'Выигрыши в играх', n: g.won },
+    { label: 'Обмен осколков', n: g.exchanged },
+  ];
+}
+
+export function crystalsEarned(p: Progress): number {
+  return crystalSources(p).reduce((n, s) => n + s.n, 0);
 }
 
 export function crystalsAvailable(p: Progress): number {

@@ -33,6 +33,10 @@ export interface Settings {
   noAudio: boolean;
   /** Short synthesized sounds for correct / wrong answers. */
   sounds: boolean;
+  /** Bundled voice id (src/lib/voices.ts) or 'random'. */
+  voice: string;
+  /** Dialogues: the second speaker uses the partner voice (other gender, same accent). */
+  dialogueVoices: boolean;
 }
 
 export interface CustomSong {
@@ -128,6 +132,8 @@ export interface Progress {
   daily?: Record<string, DailyStats>;
   /** Word gacha: collected cards and currency bookkeeping. */
   gacha?: GachaState;
+  /** Date keys of days the app was opened (daily login reward). */
+  logins?: string[];
   /** Last modification time, used to reconcile with the server copy. */
   updatedAt?: number;
   createdAt: number;
@@ -156,6 +162,8 @@ export const defaultSettings: Settings = {
   turbo: false,
   noAudio: false,
   sounds: true,
+  voice: 'af_heart',
+  dialogueVoices: true,
 };
 
 export function defaultProgress(): Progress {
@@ -188,6 +196,7 @@ export function normalizeProgress(parsed: Partial<Progress>): Progress {
       talesDone: Array.isArray(parsed.talesDone) ? parsed.talesDone : [],
       achievements: parsed.achievements && typeof parsed.achievements === 'object' ? parsed.achievements : {},
       daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
+      logins: Array.isArray(parsed.logins) ? parsed.logins : [],
       gacha: parsed.gacha && typeof parsed.gacha === 'object' ? { ...emptyGacha(), ...parsed.gacha, cards: parsed.gacha.cards ?? {}, chests: parsed.gacha.chests ?? {} } : emptyGacha(),
   };
 }

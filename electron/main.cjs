@@ -2,7 +2,7 @@ const { app, BrowserWindow, shell, Menu, protocol, net, ipcMain } = require('ele
 const path = require('path');
 const fs = require('fs');
 const https = require('https');
-const { pathToFileURL } = require('url');
+const { Readable } = require('stream');
 
 // ---------------------------------------------------------------- account API (pinned self-signed certificate)
 
@@ -104,8 +104,54 @@ function registerAppProtocol() {
     if (!fs.existsSync(file)) {
       return new Response('Not found', { status: 404 });
     }
-    return net.fetch(pathToFileURL(file).toString());
+    return serveFile(file, request.headers.get('range'));
   });
+}
+
+const MIME = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript',
+  '.css': 'text/css',
+  '.json': 'application/json',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
+  '.mp3': 'audio/mpeg',
+  '.ogg': 'audio/ogg',
+  '.wav': 'audio/wav',
+  '.ttf': 'font/ttf',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+};
+
+/**
+ * Serves a file with Content-Length and HTTP range support: Chromium's media pipeline needs both
+ * to play larger audio files (the song recordings) and to seek inside them.
+ */
+function serveFile(file, rangeHeader) {
+  const size = fs.statSync(file).size;
+  const type = MIME[path.extname(file).toLowerCase()] || 'application/octet-stream';
+  const base = { 'Content-Type': type, 'Accept-Ranges': 'bytes', 'Cache-Control': 'no-cache' };
+  const m = rangeHeader ? /^bytes=(\d*)-(\d*)$/.exec(rangeHeader) : null;
+  if (m && (m[1] || m[2])) {
+    let start = m[1] ? Number(m[1]) : Math.max(0, size - Number(m[2]));
+    let end = m[1] && m[2] ? Number(m[2]) : size - 1;
+    if (end >= size) end = size - 1;
+    if (start > end || start >= size) {
+      return new Response(null, { status: 416, headers: { ...base, 'Content-Range': `bytes */${size}` } });
+    }
+    const stream = Readable.toWeb(fs.createReadStream(file, { start, end }));
+    return new Response(stream, {
+      status: 206,
+      headers: { ...base, 'Content-Range': `bytes ${start}-${end}/${size}`, 'Content-Length': String(end - start + 1) },
+    });
+  }
+  const stream = Readable.toWeb(fs.createReadStream(file));
+  return new Response(stream, { status: 200, headers: { ...base, 'Content-Length': String(size) } });
 }
 
 // ---------------------------------------------------------------- logging

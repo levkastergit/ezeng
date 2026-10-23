@@ -7,6 +7,7 @@ import { dueWords, streakDays } from '../lib/srs';
 import { loadSession } from '../lib/sessionStore';
 import { QUEST_BONUS, dailyQuests, levelFor, todayStats, wordOfTheDay } from '../lib/stats';
 import { speak } from '../lib/tts';
+import { LOGIN_REWARDS, loginInfo } from '../lib/gacha';
 import { dateKey, pick, plural } from '../lib/utils';
 import { Mascot } from '../components/Mascot';
 import { ProgressBar } from '../components/ProgressBar';
@@ -31,6 +32,7 @@ interface Props {
   onEndless: (moduleId: string) => void;
   onReview: () => void;
   onAchievements: () => void;
+  onGacha: () => void;
 }
 
 const GREETINGS = [
@@ -41,7 +43,7 @@ const GREETINGS = [
   'Новые слова ждут тебя.',
 ];
 
-export function Home({ onOpenLesson, onEndless, onReview, onAchievements }: Props) {
+export function Home({ onOpenLesson, onEndless, onReview, onAchievements, onGacha }: Props) {
   const { progress } = useProgress();
   const todayXp = progress.days[dateKey()] ?? 0;
   const streak = streakDays(progress.days);
@@ -52,6 +54,7 @@ export function Home({ onOpenLesson, onEndless, onReview, onAchievements }: Prop
   const quests = dailyQuests(progress);
   const bonusGiven = todayStats(progress).bonus === true;
   const daily = useMemo(() => wordOfTheDay(), []);
+  const login = loginInfo(progress);
 
   const isDone = (l: Lesson) => (progress.lessons[l.id]?.stars ?? 0) > 0;
 
@@ -148,6 +151,29 @@ export function Home({ onOpenLesson, onEndless, onReview, onAchievements }: Prop
             </div>
           </div>
           {due > 0 && <span className="quick-badge">{due}</span>}
+        </button>
+      </section>
+
+      <section className="login-banner">
+        <div className="login-text">
+          <b>Ежедневная награда</b>
+          <span>
+            {login.today ? `Сегодня получено +${login.reward} 💎` : `Сегодня: +${login.reward} 💎`} · день {login.day} подряд
+          </span>
+        </div>
+        <div className="login-days">
+          {LOGIN_REWARDS.map((r, i) => {
+            const pos = (login.day - 1) % LOGIN_REWARDS.length;
+            const state = i < pos ? 'done' : i === pos ? 'now' : '';
+            return (
+              <span key={i} className={'login-day ' + state} title={`День ${i + 1}`}>
+                <small>{i + 1}</small>+{r}💎
+              </span>
+            );
+          })}
+        </div>
+        <button className="link-btn" onClick={onGacha}>
+          Потратить в гаче
         </button>
       </section>
 

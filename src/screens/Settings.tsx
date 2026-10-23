@@ -3,6 +3,10 @@ import { useProgress } from '../lib/progressContext';
 import { clearProgress, defaultProgress, normalizeProgress } from '../lib/storage';
 import type { Progress } from '../lib/storage';
 import { getEnglishVoices, onVoicesChanged, speak, ttsAvailable } from '../lib/tts';
+import { RANDOM_VOICE, VOICES } from '../lib/voices';
+import { IconSpeaker } from '../components/Icons';
+
+const SAMPLE = 'Hello! I am learning English.';
 import { Button } from '../components/Button';
 import { UpdatePanel } from '../components/UpdatePanel';
 import { AccountCard } from '../components/AccountCard';
@@ -88,10 +92,41 @@ export function SettingsScreen() {
       </div>
 
       <div className="card">
-        <h3>Озвучка</h3>
+        <h3>Голос озвучки</h3>
         <p className="muted" style={{ marginBottom: 14 }}>
-          Все слова и предложения курса озвучены встроенным английским голосом и работают без интернета.
+          Все слова и предложения курса записаны каждым из четырёх голосов и работают без интернета. Выберите голос и прослушайте пример.
         </p>
+        <div className="voice-list">
+          {VOICES.map((v) => (
+            <label key={v.id} className={'voice-row' + (s.voice === v.id ? ' on' : '')}>
+              <input type="radio" name="voice" checked={s.voice === v.id} onChange={() => set({ voice: v.id })} />
+              <span className={'voice-avatar ' + v.gender}>{v.gender === 'f' ? '👩' : '👨'}</span>
+              <span className="voice-text">
+                <b>{v.name}</b>
+                <small>{v.desc}</small>
+              </span>
+              <button type="button" className="chip-btn" onClick={() => speak(SAMPLE, { ...s, voice: v.id })}>
+                <IconSpeaker size={14} /> Прослушать
+              </button>
+            </label>
+          ))}
+          <label className={'voice-row' + (s.voice === RANDOM_VOICE ? ' on' : '')}>
+            <input type="radio" name="voice" checked={s.voice === RANDOM_VOICE} onChange={() => set({ voice: RANDOM_VOICE })} />
+            <span className="voice-avatar r">🎲</span>
+            <span className="voice-text">
+              <b>Случайный</b>
+              <small>каждая фраза звучит случайным голосом: полезно привыкать к разным акцентам</small>
+            </span>
+          </label>
+        </div>
+        <label className="field field-row">
+          <input type="checkbox" checked={s.dialogueVoices} onChange={(e) => set({ dialogueVoices: e.target.checked })} />
+          <span>В диалогах собеседники говорят разными голосами (женский и мужской одного акцента)</span>
+        </label>
+      </div>
+
+      <div className="card">
+        <h3>Озвучка</h3>
         {ttsAvailable() && voices.length > 0 && (
           <label className="field">
             <span>Системный голос (для текста вне курса)</span>

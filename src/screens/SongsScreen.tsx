@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { songs } from '../data/songs';
 import type { Song, SongLine } from '../data/songs';
+import { songAudio } from '../data/songAudio';
 import { useProgress } from '../lib/progressContext';
 import { hasEnglishVoice, speakAsync, stopSpeaking } from '../lib/tts';
 import { Button } from '../components/Button';
@@ -100,6 +101,7 @@ export function SongsScreen() {
   if (song) {
     const lines = song.lines;
     const noVoice = isCustom && !hasEnglishVoice();
+    const audio = songAudio[song.id];
     return (
       <div className="page">
         <button className="back-link" onClick={() => open(null)}>
@@ -121,10 +123,29 @@ export function SongsScreen() {
           )}
         </div>
 
+        {audio && (
+          <div className="card song-record">
+            <div className="song-record-head">
+              <IconMusic size={20} className="c-purple" />
+              <div>
+                <b>Запись песни</b>
+                <div className="muted small">
+                  {audio.credit} · {audio.license} ·{' '}
+                  <a href={audio.source} target="_blank" rel="noreferrer">
+                    Wikimedia Commons
+                  </a>
+                </div>
+                {audio.note && <div className="muted small">{audio.note}</div>}
+              </div>
+            </div>
+            <audio controls preload="none" src={`${import.meta.env.BASE_URL}songs/${audio.file}`} onPlay={stop} />
+          </div>
+        )}
+
         <div className="song-controls">
           {playing === null ? (
-            <Button onClick={() => void playAll(lines)} disabled={noVoice}>
-              <IconPlay size={18} /> Слушать всё
+            <Button variant={audio ? 'secondary' : 'primary'} onClick={() => void playAll(lines)} disabled={noVoice}>
+              <IconPlay size={18} /> {audio ? 'Прочитать текст построчно' : 'Слушать всё'}
             </Button>
           ) : (
             <Button variant="danger" onClick={stop}>
@@ -173,8 +194,8 @@ export function SongsScreen() {
       <div className="page-head">
         <h1>Песни</h1>
         <p>
-          Известные песни, тексты которых стали общественным достоянием: оригинал, построчный перевод, транскрипция и озвучка каждой строки.
-          Современные хиты защищены авторским правом, поэтому их можно добавить самостоятельно: вставь текст и перевод.
+          Известные песни, тексты которых стали общественным достоянием. У каждой есть настоящая запись исполнения (свободные лицензии и общественное достояние, авторы указаны),
+          оригинальный текст, построчный перевод, транскрипция и озвучка строк для отработки произношения. Современные хиты защищены авторским правом, поэтому их можно добавить самостоятельно: вставь текст и перевод.
         </p>
       </div>
 
@@ -221,7 +242,10 @@ export function SongsScreen() {
               <IconMusic size={26} />
             </div>
             <div className="song-card-text">
-              <div className="song-card-title">{s.title}</div>
+              <div className="song-card-title">
+                {s.title}
+                {songAudio[s.id] && <span className="song-badge">🎵 запись</span>}
+              </div>
               <div className="muted">
                 {s.author}
                 {s.year ? ` · ${s.year}` : ''} · {s.lines.filter((l) => l.en).length} строк

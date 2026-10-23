@@ -1,4 +1,6 @@
 import manifestJson from '../data/audio-manifest.json';
+import { DEFAULT_VOICE, resolveVoice } from './voices';
+import type { VoiceDef } from './voices';
 
 /** Pre-recorded clips for every English word and sentence in the course (text → file name). */
 const manifest = manifestJson as Record<string, string>;
@@ -49,7 +51,10 @@ function pickVoice(voiceURI: string): SpeechSynthesisVoice | null {
 
 export interface SpeakOptions {
   rate?: number;
+  /** System voice for texts that have no bundled clip. */
   voiceURI?: string;
+  /** Bundled Kokoro voice id (see voices.ts) or 'random'. */
+  voice?: string;
 }
 
 const BASE_RATE = 0.9;
@@ -57,6 +62,10 @@ const BASE_RATE = 0.9;
 function clampRate(rate: number | undefined): number {
   const r = rate ?? BASE_RATE;
   return Math.min(1.5, Math.max(0.4, r));
+}
+
+function clipUrl(file: string, voice: VoiceDef): string {
+  return `${import.meta.env.BASE_URL}audio/${voice.dir ? voice.dir + '/' : ''}${file}`;
 }
 
 function speakWithSystemVoice(text: string, rate: number, voiceURI: string): void {
@@ -74,7 +83,39 @@ function speakWithSystemVoice(text: string, rate: number, voiceURI: string): voi
 }
 
 /**
- * Plays the bundled clip for the text when one exists (works offline, same voice for everyone),
+ * Plays a clip; when the chosen voice has no clip for it (should not happen with a complete bundle),
+ * falls back to the default voice. Resolves when playback ends or nothing could be played.
+ */
+function playClip(file: string, voice: VoiceDef, rate: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const audio = new Audio(clipUrl(file, voice));
+    audio.playbackRate = rate / BASE_RATE;
+    (audio as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
+    current = audio;
+    let settled = false;
+    const finish = (ok: boolean) => {
+      if (settled) return;
+      settled = true;
+      if (current === audio) current = null;
+      resolve(ok);
+    };
+    audio.addEventListener('ended', () => finish(true));
+    audio.addEventListener('pause', () => finish(true));
+    audio.addEventListener('error', () => finish(false));
+    audio.play().catch(() => finish(false));
+  });
+}
+
+async function playWithFallback(text: string, file: string, opts: SpeakOptions, rate: number): Promise<void> {
+  const voice = resolveVoice(opts.voice);
+  const ok = await playClip(file, voice, rate);
+  if (ok) return;
+  if (voice.id !== DEFAULT_VOICE.id && (await playClip(file, DEFAULT_VOICE, rate))) return;
+  speakWithSystemVoice(text, rate, opts.voiceURI ?? '');
+}
+
+/**
+ * Plays the bundled clip for the text when one exists (works offline, in the voice chosen in the settings),
  * otherwise falls back to the system speech synthesis with an English voice.
  */
 export function speak(text: string, opts: SpeakOptions = {}): void {
@@ -82,11 +123,7 @@ export function speak(text: string, opts: SpeakOptions = {}): void {
   const rate = clampRate(opts.rate);
   const file = manifest[text] ?? manifest[text.trim()];
   if (file) {
-    const audio = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
-    audio.playbackRate = rate / BASE_RATE;
-    (audio as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
-    current = audio;
-    audio.play().catch(() => speakWithSystemVoice(text, rate, opts.voiceURI ?? ''));
+    void playWithFallback(text, file, opts, rate);
     return;
   }
   speakWithSystemVoice(text, rate, opts.voiceURI ?? '');
@@ -102,24 +139,20 @@ export function speakAsync(text: string, opts: SpeakOptions = {}): Promise<void>
   const rate = clampRate(opts.rate);
   const file = manifest[text] ?? manifest[text.trim()];
   if (file) {
-    return new Promise((resolve) => {
-      const audio = new Audio(`${import.meta.env.BASE_URL}audio/${file}`);
-      audio.playbackRate = rate / BASE_RATE;
-      (audio as HTMLAudioElement & { preservesPitch?: boolean }).preservesPitch = true;
-      current = audio;
-      const done = () => {
-        if (current === audio) current = null;
-        resolve();
-      };
-      audio.addEventListener('ended', done);
-      audio.addEventListener('error', done);
-      audio.addEventListener('pause', done);
-      audio.play().catch(done);
-    });
+    return (async () => {
+      const voice = resolveVoice(opts.voice);
+      if (await playClip(file, voice, rate)) return;
+      if (voice.id !== DEFAULT_VOICE.id && (await playClip(file, DEFAULT_VOICE, rate))) return;
+      await speakSystemAsync(text, rate, opts.voiceURI ?? '');
+    })();
   }
+  return speakSystemAsync(text, rate, opts.voiceURI ?? '');
+}
+
+function speakSystemAsync(text: string, rate: number, voiceURI: string): Promise<void> {
   return new Promise((resolve) => {
     if (!ttsAvailable()) return resolve();
-    const v = pickVoice(opts.voiceURI ?? '');
+    const v = pickVoice(voiceURI);
     if (!v) return resolve();
     const synth = window.speechSynthesis;
     synth.cancel();

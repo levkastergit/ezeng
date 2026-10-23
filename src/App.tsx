@@ -17,7 +17,8 @@ import { achievementById, applyRewards } from './lib/achievements';
 import { QUEST_BONUS } from './lib/stats';
 import { playSfx } from './lib/sfx';
 import { dueWords, streakDays } from './lib/srs';
-import { uid } from './lib/utils';
+import { dateKey, uid } from './lib/utils';
+import { loginInfo } from './lib/gacha';
 import { Sidebar } from './components/Sidebar';
 import type { NavName } from './components/Sidebar';
 import { ToastStack } from './components/Toast';
@@ -187,6 +188,19 @@ export default function App() {
   const ctx = useMemo(() => ({ progress, update }), [progress, update]);
   const closeToast = useCallback((id: string) => setToasts((t) => t.filter((x) => x.id !== id)), []);
 
+  // Daily login reward: the first time the app is opened on a day, that day is recorded and crystals are granted.
+  useEffect(() => {
+    if (!booted || showLogin) return;
+    const today = dateKey();
+    if ((progress.logins ?? []).includes(today)) return;
+    const info = loginInfo(progress, today);
+    update((p) => ((p.logins ?? []).includes(today) ? p : { ...p, logins: [...(p.logins ?? []), today] }));
+    setToasts((t) => [
+      ...t,
+      { id: uid(), emoji: '📅', title: `Ежедневный бонус: +${info.reward} 💎`, desc: info.day > 1 ? `День ${info.day} подряд. Заходите завтра за следующей наградой!` : 'Заходите каждый день: награда растёт до +5 💎' },
+    ]);
+  }, [progress, booted, showLogin, update]);
+
   // ---------------------------------------------------------------- auth actions
 
   const onLoggedIn = async ({ token, user: u, isNew }: { token: string; user: ApiUser; progressUpdatedAt: number; isNew: boolean }) => {
@@ -282,6 +296,7 @@ export default function App() {
                 onEndless={(id) => setScreen({ name: 'endless', moduleId: id })}
                 onReview={() => setScreen({ name: 'review' })}
                 onAchievements={() => setScreen({ name: 'achievements' })}
+                onGacha={() => setScreen({ name: 'gacha' })}
               />
             )}
             {screen.name === 'lesson' && <LessonScreen key={screen.lessonId} lessonId={screen.lessonId} onExit={() => setScreen({ name: 'home' })} />}

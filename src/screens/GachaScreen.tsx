@@ -3,16 +3,14 @@ import type { CSSProperties } from 'react';
 import { modules } from '../data/course';
 import {
   ALL_CARDS,
-  CRYSTALS_PER_ACHIEVEMENT,
-  CRYSTALS_PER_QUEST_DAY,
   PITY_LIMIT,
   PULL10_COST,
   PULL_COST,
   RARITY,
   RARITY_ORDER,
   SHARDS_PER_CRYSTAL,
-  XP_PER_CRYSTAL,
   collectedByRarity,
+  crystalSources,
   crystalsAvailable,
   doPull,
   exchangeShards,
@@ -54,6 +52,7 @@ export function GachaScreen() {
   const [moduleId, setModuleId] = useState('all');
   const [limit, setLimit] = useState(PAGE);
   const [detail, setDetail] = useState<GachaCard | null>(null);
+  const [showSources, setShowSources] = useState(false);
 
   // Reveal the drawn cards one by one.
   useEffect(() => {
@@ -205,7 +204,29 @@ export function GachaScreen() {
               Крутить ×10 · {PULL10_COST} 💎
             </Button>
             <div className="gacha-howto">
-              Кристаллы: 1 за каждые {XP_PER_CRYSTAL} XP, +{CRYSTALS_PER_ACHIEVEMENT} за достижение, +{CRYSTALS_PER_QUEST_DAY} за задания дня. Повторная карта даёт осколки ({RARITY.common.shards}/{RARITY.rare.shards}/{RARITY.epic.shards}/{RARITY.legendary.shards}), {SHARDS_PER_CRYSTAL} осколков = 1 кристалл.
+              Кристаллы приходят за уроки, повторения, бесконечный режим, сказки, тесты, уровни, достижения, задания дня, ежедневный вход и выигрыши в играх.{' '}
+              <button className="link-btn light" onClick={() => setShowSources((v) => !v)}>
+                {showSources ? 'скрыть' : 'подробнее'}
+              </button>
+              {showSources && (
+                <table className="sources-table">
+                  <tbody>
+                    {crystalSources(progress).map((s) => (
+                      <tr key={s.label}>
+                        <td>{s.label}</td>
+                        <td>{s.n}</td>
+                      </tr>
+                    ))}
+                    <tr className="total">
+                      <td>Потрачено</td>
+                      <td>−{g.spent}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              )}
+              <div>
+                Повторная карта даёт осколки ({RARITY.common.shards}/{RARITY.rare.shards}/{RARITY.epic.shards}/{RARITY.legendary.shards}), {SHARDS_PER_CRYSTAL} осколков = 1 кристалл.
+              </div>
             </div>
           </div>
         </section>
