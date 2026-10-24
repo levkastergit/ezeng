@@ -2,12 +2,23 @@ import { useEffect, useRef, useState } from 'react';
 import { songs } from '../data/songs';
 import type { Song, SongLine } from '../data/songs';
 import { songAudio } from '../data/songAudio';
+import songKaraoke from '../data/songKaraoke.json';
+import { buildBuiltinTimeline } from '../lib/karaoke';
+import { bumpDaily } from '../lib/storage';
+import { KaraokePlayer } from '../components/KaraokePlayer';
+import { KaraokeAdd } from './karaoke/KaraokeAdd';
+import { KaraokeSongView } from './karaoke/KaraokeSongView';
+import { KaraokeSync } from './karaoke/KaraokeSync';
 import { useProgress } from '../lib/progressContext';
 import { hasEnglishVoice, speakAsync, stopSpeaking } from '../lib/tts';
 import { Button } from '../components/Button';
 import { IconArrowLeft, IconMusic, IconPlay, IconSpeaker, IconStop, IconTrash } from '../components/Icons';
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+type Timing = { coverage: number; lines: Record<string, [number, number][]> };
+const TIMINGS = songKaraoke as unknown as Record<string, Timing>;
+type KView = { kind: 'add' } | { kind: 'song'; id: string } | { kind: 'sync'; id: string } | null;
 
 export function SongsScreen() {
   const { progress, update } = useProgress();
@@ -17,6 +28,8 @@ export function SongsScreen() {
   const [showRu, setShowRu] = useState(true);
   const [showCy, setShowCy] = useState(true);
   const [playing, setPlaying] = useState<number | null>(null);
+  const [mode, setMode] = useState<'karaoke' | 'text'>('karaoke');
+  const [kView, setKView] = useState<KView>(null);
   const cancelRef = useRef(false);
 
   const [title, setTitle] = useState('');
@@ -98,10 +111,25 @@ export function SongsScreen() {
     setOpenId(null);
   };
 
+  if (kView?.kind === 'add') {
+    return <KaraokeAdd onCancel={() => setKView(null)} onDone={(id, needsSync) => setKView({ kind: needsSync ? 'sync' : 'song', id })} />;
+  }
+  if (kView?.kind === 'song') {
+    const id = kView.id;
+    return <KaraokeSongView songId={id} onBack={() => setKView(null)} onSync={() => setKView({ kind: 'sync', id })} />;
+  }
+  if (kView?.kind === 'sync') {
+    const id = kView.id;
+    return <KaraokeSync songId={id} onDone={() => setKView({ kind: 'song', id })} />;
+  }
+
   if (song) {
     const lines = song.lines;
     const noVoice = isCustom && !hasEnglishVoice();
     const audio = songAudio[song.id];
+    const timing = TIMINGS[song.id];
+    const kLines = audio && timing && timing.coverage > 0 ? buildBuiltinTimeline(lines, timing.lines) : null;
+    const karaokeOn = !!kLines && mode === 'karaoke';
     return (
       <div className="page">
         <button className="back-link" onClick={() => open(null)}>
@@ -123,7 +151,42 @@ export function SongsScreen() {
           )}
         </div>
 
-        {audio && (
+        {kLines && (
+          <div className="tabs song-mode">
+            <button
+              className={'tab' + (mode === 'karaoke' ? ' active' : '')}
+              onClick={() => {
+                stop();
+                setMode('karaoke');
+              }}
+            >
+              🎤 Караоке
+            </button>
+            <button className={'tab' + (mode === 'text' ? ' active' : '')} onClick={() => setMode('text')}>
+              Текст и перевод
+            </button>
+          </div>
+        )}
+
+        {karaokeOn && audio && kLines && (
+          <>
+            <KaraokePlayer
+              src={`${import.meta.env.BASE_URL}songs/${audio.file}`}
+              lines={kLines}
+              onEnded={() => update((p) => bumpDaily(p, { karaoke: 1 }))}
+              untimedNote="Строки без подсветки в этой записи не поются или не распознались, их можно прочитать во вкладке «Текст и перевод»."
+            />
+            <p className="muted small song-credit">
+              Запись: {audio.credit} · {audio.license} ·{' '}
+              <a href={audio.source} target="_blank" rel="noreferrer">
+                Wikimedia Commons
+              </a>
+              {audio.note ? ` · ${audio.note}` : ''}
+            </p>
+          </>
+        )}
+
+        {!karaokeOn && audio && (
           <div className="card song-record">
             <div className="song-record-head">
               <IconMusic size={20} className="c-purple" />
@@ -142,6 +205,8 @@ export function SongsScreen() {
           </div>
         )}
 
+        {!karaokeOn && (
+          <>
         <div className="song-controls">
           {playing === null ? (
             <Button variant={audio ? 'secondary' : 'primary'} onClick={() => void playAll(lines)} disabled={noVoice}>
@@ -185,6 +250,8 @@ export function SongsScreen() {
             ),
           )}
         </div>
+          </>
+        )}
       </div>
     );
   }
@@ -198,6 +265,37 @@ export function SongsScreen() {
           оригинальный текст, построчный перевод, транскрипция и озвучка строк для отработки произношения. Современные хиты защищены авторским правом, поэтому их можно добавить самостоятельно: вставь текст и перевод.
         </p>
       </div>
+
+      <section className="karaoke-section">
+        <div className="karaoke-head">
+          <div>
+            <h2 className="section-title">🎤 Караоке со своими песнями</h2>
+            <p className="muted">
+              Песни с радио защищены авторским правом, поэтому в приложение они не встроены. Откройте mp3 любимой песни со своего компьютера: текст с таймингом найдётся
+              автоматически и будет подсвечиваться по словам, а любое слово можно нажать и посмотреть перевод.
+            </p>
+          </div>
+          <Button onClick={() => setKView({ kind: 'add' })}>+ Добавить песню</Button>
+        </div>
+        {(progress.karaoke ?? []).length > 0 && (
+          <div className="song-grid">
+            {(progress.karaoke ?? []).map((k) => (
+              <button key={k.id} className="song-card karaoke" onClick={() => setKView({ kind: 'song', id: k.id })}>
+                <div className="song-card-icon">🎤</div>
+                <div className="song-card-text">
+                  <div className="song-card-title">{k.title}</div>
+                  <div className="muted">
+                    {k.artist || 'исполнитель не указан'} · {k.lines.filter((l) => l.text).length} строк
+                    {k.lines.some((l) => l.t !== null) ? '' : ' · нужна синхронизация'}
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        )}
+      </section>
+
+      <h2 className="section-title">Классические песни</h2>
 
       {adding ? (
         <div className="card">
@@ -244,7 +342,7 @@ export function SongsScreen() {
             <div className="song-card-text">
               <div className="song-card-title">
                 {s.title}
-                {songAudio[s.id] && <span className="song-badge">🎵 запись</span>}
+                {songAudio[s.id] && <span className="song-badge">{TIMINGS[s.id]?.coverage ? '🎤 караоке' : '🎵 запись'}</span>}
               </div>
               <div className="muted">
                 {s.author}

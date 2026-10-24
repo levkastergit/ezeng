@@ -1,4 +1,5 @@
 import { dateKey } from './utils';
+import type { UserKaraokeSong } from './karaoke';
 
 export interface WordState {
   key: string;
@@ -69,6 +70,8 @@ export interface DailyStats {
   gacha?: number;
   /** Arcade games played today (chests, wheel, slots, bets). */
   games?: number;
+  /** Karaoke songs listened to the end today. */
+  karaoke?: number;
 }
 
 export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
@@ -134,6 +137,8 @@ export interface Progress {
   gacha?: GachaState;
   /** Date keys of days the app was opened (daily login reward). */
   logins?: string[];
+  /** The user's own karaoke songs (lyrics and timings; audio files stay on the computer). */
+  karaoke?: UserKaraokeSong[];
   /** Last modification time, used to reconcile with the server copy. */
   updatedAt?: number;
   createdAt: number;
@@ -197,6 +202,7 @@ export function normalizeProgress(parsed: Partial<Progress>): Progress {
       achievements: parsed.achievements && typeof parsed.achievements === 'object' ? parsed.achievements : {},
       daily: parsed.daily && typeof parsed.daily === 'object' ? parsed.daily : {},
       logins: Array.isArray(parsed.logins) ? parsed.logins : [],
+      karaoke: Array.isArray(parsed.karaoke) ? parsed.karaoke : [],
       gacha: parsed.gacha && typeof parsed.gacha === 'object' ? { ...emptyGacha(), ...parsed.gacha, cards: parsed.gacha.cards ?? {}, chests: parsed.gacha.chests ?? {} } : emptyGacha(),
   };
 }

@@ -21,6 +21,12 @@ contextBridge.exposeInMainWorld('ezeng', {
     setAuth: (data) => ipcRenderer.invoke('auth:set', data),
     clearAuth: () => ipcRenderer.invoke('auth:clear'),
   },
+  karaoke: {
+    save: (id, ext, data) => ipcRenderer.invoke('karaoke:save', { id, ext, data }),
+    file: (id) => ipcRenderer.invoke('karaoke:file', id),
+    remove: (id) => ipcRenderer.invoke('karaoke:delete', id),
+    searchLyrics: (query) => ipcRenderer.invoke('lyrics:search', query),
+  },
   update: {
     check: () => ipcRenderer.invoke('update:check'),
     download: () => ipcRenderer.invoke('update:download'),

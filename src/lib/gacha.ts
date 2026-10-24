@@ -127,6 +127,7 @@ export function crystalSources(p: Progress): CrystalSource[] {
     { label: `Новые уровни: +${CRYSTALS_PER_LEVEL}`, n: (levelFor(p.xp).level - 1) * CRYSTALS_PER_LEVEL },
     { label: `Достижения: +${CRYSTALS_PER_ACHIEVEMENT}`, n: achievements * CRYSTALS_PER_ACHIEVEMENT },
     { label: `Задания дня: +${CRYSTALS_PER_QUEST_DAY}`, n: questDays * CRYSTALS_PER_QUEST_DAY },
+    { label: 'Караоке: +1 за песню до конца (до 3 в день)', n: Object.values(p.daily ?? {}).reduce((n, d) => n + Math.min(3, d.karaoke ?? 0), 0) },
     { label: 'Ежедневный вход: 1–5 по серии дней', n: loginInfo(p).total },
     { label: 'Выигрыши в играх', n: g.won },
     { label: 'Обмен осколков', n: g.exchanged },

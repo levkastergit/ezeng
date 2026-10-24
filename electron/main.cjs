@@ -65,6 +65,80 @@ ipcMain.handle('auth:clear', () => {
   }
 });
 
+// ---------------------------------------------------------------- karaoke: user audio files and synced lyrics
+
+const KARAOKE_ID = /^[a-z0-9_-]{4,40}$/;
+const KARAOKE_EXT = /^(mp3|m4a|aac|ogg|oga|opus|wav|flac|webm)$/;
+const KARAOKE_MAX_BYTES = 80 * 1024 * 1024;
+
+function karaokeDir() {
+  const dir = path.join(app.getPath('userData'), 'karaoke');
+  fs.mkdirSync(dir, { recursive: true });
+  return dir;
+}
+
+function karaokeFile(id) {
+  if (!KARAOKE_ID.test(String(id))) return null;
+  const name = fs.readdirSync(karaokeDir()).find((n) => n.startsWith(`${id}.`));
+  return name ? path.join(karaokeDir(), name) : null;
+}
+
+ipcMain.handle('karaoke:save', (_e, { id, ext, data } = {}) => {
+  if (!KARAOKE_ID.test(String(id)) || !KARAOKE_EXT.test(String(ext))) return { ok: false, error: 'bad file name' };
+  const buf = Buffer.from(data);
+  if (buf.length > KARAOKE_MAX_BYTES) return { ok: false, error: 'file too large' };
+  const old = karaokeFile(id);
+  if (old) fs.unlinkSync(old);
+  fs.writeFileSync(path.join(karaokeDir(), `${id}.${ext}`), buf);
+  return { ok: true, file: `${id}.${ext}` };
+});
+ipcMain.handle('karaoke:file', (_e, id) => {
+  const f = karaokeFile(id);
+  return f ? path.basename(f) : null;
+});
+ipcMain.handle('karaoke:delete', (_e, id) => {
+  const f = karaokeFile(id);
+  if (f) fs.unlinkSync(f);
+  return true;
+});
+
+/** Synced lyrics from LRCLIB (https://lrclib.net), an open lyrics database; only on the user's request. */
+ipcMain.handle('lyrics:search', async (_e, query = {}) => {
+  const params = new URLSearchParams();
+  if (query.q) params.set('q', String(query.q));
+  else {
+    params.set('track_name', String(query.title || ''));
+    if (query.artist) params.set('artist_name', String(query.artist));
+  }
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 20_000);
+  try {
+    const res = await net.fetch(`https://lrclib.net/api/search?${params}`, {
+      headers: { 'User-Agent': `EzEng/${app.getVersion()} (https://github.com/levkastergit/ezeng)` },
+      signal: ctrl.signal,
+    });
+    if (!res.ok) return { ok: false, error: `HTTP ${res.status}` };
+    const list = await res.json();
+    return {
+      ok: true,
+      results: (Array.isArray(list) ? list : []).slice(0, 25).map((r) => ({
+        id: r.id,
+        artist: r.artistName,
+        title: r.trackName,
+        album: r.albumName,
+        duration: r.duration,
+        synced: r.syncedLyrics || null,
+        plain: r.plainLyrics || null,
+        instrumental: Boolean(r.instrumental),
+      })),
+    };
+  } catch (err) {
+    return { ok: false, error: err.name === 'AbortError' ? 'timeout' : err.message };
+  } finally {
+    clearTimeout(timer);
+  }
+});
+
 const APP_SCHEME = 'app';
 const DIST_DIR = path.join(__dirname, '..', 'dist');
 const RELEASES_URL = 'https://github.com/levkastergit/ezeng/releases/latest';
@@ -97,6 +171,13 @@ function registerAppProtocol() {
     const url = new URL(request.url);
     let rel = decodeURIComponent(url.pathname);
     if (rel === '/' || rel === '') rel = '/index.html';
+    if (rel.startsWith('/user-media/')) {
+      const name = path.basename(rel);
+      if (!/^[a-z0-9_-]{4,40}\.[a-z0-9]{2,5}$/.test(name)) return new Response('Forbidden', { status: 403 });
+      const media = path.join(app.getPath('userData'), 'karaoke', name);
+      if (!fs.existsSync(media)) return new Response('Not found', { status: 404 });
+      return serveFile(media, request.headers.get('range'));
+    }
     const file = path.normalize(path.join(DIST_DIR, rel));
     if (!file.startsWith(DIST_DIR)) {
       return new Response('Forbidden', { status: 403 });
@@ -123,6 +204,12 @@ const MIME = {
   '.mp3': 'audio/mpeg',
   '.ogg': 'audio/ogg',
   '.wav': 'audio/wav',
+  '.oga': 'audio/ogg',
+  '.opus': 'audio/ogg',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.flac': 'audio/flac',
+  '.webm': 'audio/webm',
   '.ttf': 'font/ttf',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
